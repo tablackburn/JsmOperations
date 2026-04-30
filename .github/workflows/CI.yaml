@@ -1,0 +1,135 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  lint:
+    name: PSScriptAnalyzer Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # Skip lint on the un-initialized template — the literal `./{{ModuleName}}`
+      # path argument can't be parsed by PowerShell (the double braces split into
+      # mismatched script-block delimiters), so Invoke-ScriptAnalyzer fails with
+      # a positional-argument error before it ever touches the folder. Same
+      # marker as the unit-tests job below.
+      - name: Detect template state
+        id: template_guard
+        shell: bash
+        run: |
+          if [ -f CHANGELOG.template.md ]; then
+            echo "is_template=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_template=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Cache PowerShell modules
+        if: steps.template_guard.outputs.is_template == 'false'
+        id: cache-lint-modules
+        uses: actions/cache@v5
+        with:
+          path: ~/.local/share/powershell/Modules
+          key: ${{ runner.os }}-psmodules-lint-${{ hashFiles('build.depend.psd1') }}
+          restore-keys: |
+            ${{ runner.os }}-psmodules-lint-
+
+      - name: Install PSScriptAnalyzer
+        if: steps.template_guard.outputs.is_template == 'false' && steps.cache-lint-modules.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+
+      - name: Run PSScriptAnalyzer
+        if: steps.template_guard.outputs.is_template == 'false'
+        shell: pwsh
+        run: |
+          $results = Invoke-ScriptAnalyzer -Path ./{{ModuleName}} -Recurse -Settings PSGallery -ReportSummary
+          $errors = $results | Where-Object { $_.Severity -eq 'Error' }
+
+          if ($results) {
+            Write-Host "::group::PSScriptAnalyzer Results"
+            $results | Format-Table -AutoSize
+            Write-Host "::endgroup::"
+          }
+
+          if ($errors) {
+            Write-Host "::error::PSScriptAnalyzer found $($errors.Count) error(s)"
+            exit 1
+          }
+
+          Write-Host "PSScriptAnalyzer passed with no errors"
+
+  unit-tests:
+    name: Unit Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+      - uses: actions/checkout@v6
+
+      # Skip subsequent steps on the un-initialized template — Build's
+      # GENERATEMARKDOWN task can't import the manifest while {{GUID}} is still
+      # a literal placeholder. Marker: CHANGELOG.template.md exists only
+      # pre-init; Initialize-Template.ps1 moves it onto CHANGELOG.md during
+      # init, so downstream repos run the full job. The marker path contains
+      # no placeholder token, so init's substitution loop leaves this guard
+      # intact when the workflow is copied into a new module.
+      # hashFiles() is not allowed in jobs.<job_id>.if, so we evaluate it in a
+      # step and gate downstream steps on the resulting output.
+      - name: Detect template state
+        id: template_guard
+        shell: bash
+        run: |
+          if [ -f CHANGELOG.template.md ]; then
+            echo "is_template=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_template=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Cache PowerShell modules
+        if: steps.template_guard.outputs.is_template == 'false'
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/Documents/PowerShell/Modules
+            ~/.local/share/powershell/Modules
+          key: ${{ runner.os }}-psmodules-${{ hashFiles('build.depend.psd1') }}
+          restore-keys: |
+            ${{ runner.os }}-psmodules-
+
+      - name: Build and Test
+        if: steps.template_guard.outputs.is_template == 'false'
+        shell: pwsh
+        run: |
+          New-Item -Path out -ItemType Directory -Force | Out-Null
+          ./build.ps1 -Task Build,Test -Bootstrap
+
+      - name: Upload Coverage to Codecov
+        if: success() && steps.template_guard.outputs.is_template == 'false'
+        uses: codecov/codecov-action@v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: out/codeCoverage.xml
+          flags: ${{ matrix.os }}
+          fail_ci_if_error: false
+
+      - name: Upload Test Results
+        if: always() && steps.template_guard.outputs.is_template == 'false'
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-${{ matrix.os }}
+          path: out/
+          retention-days: 30

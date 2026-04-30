@@ -21,13 +21,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Never publish the un-initialized template — the .psd1 still has
-      # JsmOperations and ed5ec128-55d1-4f39-bcbe-73a19f41367a placeholders. Same marker as CI.yaml:
-      # CHANGELOG.template.md exists only pre-init. hashFiles() is not allowed
-      # in jobs.<job_id>.if, so we evaluate it in a step and gate the
-      # version-detection and release-check steps on the resulting output;
-      # everything downstream cascades on those steps' outputs and skips
-      # naturally when they don't run.
+      # Template guard: never publish from the un-initialized
+      # PowerShellModuleTemplate, where the .psd1 still has unresolved
+      # name/GUID placeholders. Same marker as CI.yaml: CHANGELOG.template.md
+      # exists only pre-init and is renamed during initialization, so this
+      # guard is inert in derived repos. hashFiles() is not allowed in
+      # jobs.<job_id>.if, so we evaluate it in a step and gate version-
+      # detection and release-check on the resulting output; everything
+      # downstream cascades on those steps' outputs and skips naturally when
+      # they don't run.
       - name: Detect template state
         id: template_guard
         shell: bash

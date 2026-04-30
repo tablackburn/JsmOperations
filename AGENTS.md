@@ -16,8 +16,8 @@ This is a PowerShell module project following standard conventions for:
 |------|---------|
 | `build.ps1` | Entry point for all build operations |
 | `build.psake.ps1` | Psake task definitions |
-| `{{ModuleName}}/{{ModuleName}}.psd1` | Module manifest |
-| `{{ModuleName}}/{{ModuleName}}.psm1` | Module root file |
+| `JsmOperations/JsmOperations.psd1` | Module manifest |
+| `JsmOperations/JsmOperations.psm1` | Module root file |
 | `tests/` | Pester test suite |
 
 ## Common Tasks
@@ -36,13 +36,13 @@ This is a PowerShell module project following standard conventions for:
 
 ### Adding a New Function
 
-1. Create function file in `{{ModuleName}}/Public/` or `{{ModuleName}}/Private/`
+1. Create function file in `JsmOperations/Public/` or `JsmOperations/Private/`
 2. Add function name to `FunctionsToExport` in `.psd1` (public functions only)
 3. Create corresponding test file in `tests/Unit/Public/` or `tests/Unit/Private/`
 
 ## Code Style
 
-- Use `{{Prefix}}` prefix for all function nouns (e.g., `Get-{{Prefix}}Example`)
+- Use `Jsm` prefix for all function nouns (e.g., `Get-JsmExample`)
 - Include full comment-based help with .SYNOPSIS, .DESCRIPTION, .PARAMETER, .EXAMPLE
 - Use `[CmdletBinding()]` on all functions
 - Follow PSScriptAnalyzer rules

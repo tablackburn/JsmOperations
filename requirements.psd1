@@ -1,4 +1,4 @@
-# Module-specific runtime dependencies for {{ModuleName}}
+# Module-specific runtime dependencies for JsmOperations
 # See https://github.com/RamblingCookieMonster/PSDepend for options
 @{
     PSDependOptions = @{

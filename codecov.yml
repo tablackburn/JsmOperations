@@ -1,4 +1,4 @@
-# Codecov configuration for {{ModuleName}}
+# Codecov configuration for JsmOperations
 # Documentation: https://docs.codecov.com/docs/codecovyml-reference
 
 coverage:
@@ -28,7 +28,7 @@ comment:
 flags:
   unittests:
     paths:
-      - {{ModuleName}}/
+      - JsmOperations/
     carryforward: true
 
 ignore:

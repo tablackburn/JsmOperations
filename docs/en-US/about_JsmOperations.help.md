@@ -1,6 +1,6 @@
-# {{ModuleName}}
+# JsmOperations
 
-## about_{{ModuleName}}
+## about_JsmOperations
 
 ## SHORT DESCRIPTION
 

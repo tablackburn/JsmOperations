@@ -15,8 +15,8 @@ properties {
     $PSBPreference.Test.OutputFormat = 'NUnitXml'
     $PSBPreference.Test.CodeCoverage.Enabled = $true
     $PSBPreference.Test.CodeCoverage.Files = @(
-        "$PSScriptRoot/{{ModuleName}}/Public/*.ps1"
-        "$PSScriptRoot/{{ModuleName}}/Private/*.ps1"
+        "$PSScriptRoot/JsmOperations/Public/*.ps1"
+        "$PSScriptRoot/JsmOperations/Private/*.ps1"
     )
     $PSBPreference.Test.CodeCoverage.Threshold = 0  # Threshold enforced by Codecov
     $PSBPreference.Test.CodeCoverage.OutputFile = [IO.Path]::Combine($PSScriptRoot, 'out', 'codeCoverage.xml')

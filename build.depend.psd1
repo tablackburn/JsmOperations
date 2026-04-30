@@ -1,4 +1,4 @@
-# Build dependencies for {{ModuleName}}
+# Build dependencies for JsmOperations
 # These are the modules needed for building and testing the module
 @{
     PSDependOptions    = @{

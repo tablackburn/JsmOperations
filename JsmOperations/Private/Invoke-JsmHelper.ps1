@@ -1,4 +1,4 @@
-function Invoke-{{Prefix}}Helper {
+function Invoke-JsmHelper {
     <#
     .SYNOPSIS
         Example private helper function.
@@ -11,7 +11,7 @@ function Invoke-{{Prefix}}Helper {
         The message to process.
 
     .EXAMPLE
-        Invoke-{{Prefix}}Helper -Message 'Hello, World!'
+        Invoke-JsmHelper -Message 'Hello, World!'
 
         Returns the processed message.
 

@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - '{{ModuleName}}/{{ModuleName}}.psd1'
+      - 'JsmOperations/JsmOperations.psd1'
   workflow_dispatch:
 
 permissions:
@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       # Never publish the un-initialized template — the .psd1 still has
-      # {{ModuleName}} and {{GUID}} placeholders. Same marker as CI.yaml:
+      # JsmOperations and ed5ec128-55d1-4f39-bcbe-73a19f41367a placeholders. Same marker as CI.yaml:
       # CHANGELOG.template.md exists only pre-init. hashFiles() is not allowed
       # in jobs.<job_id>.if, so we evaluate it in a step and gate the
       # version-detection and release-check steps on the resulting output;
@@ -43,7 +43,7 @@ jobs:
         if: steps.template_guard.outputs.is_template == 'false'
         shell: pwsh
         run: |
-          $manifest = Import-PowerShellDataFile -Path ./{{ModuleName}}/{{ModuleName}}.psd1
+          $manifest = Import-PowerShellDataFile -Path ./JsmOperations/JsmOperations.psd1
           $version = $manifest.ModuleVersion
           Write-Host "Module version: $version"
           "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
@@ -69,7 +69,7 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ steps.version.outputs.version }}"
-          $published = Find-Module -Name {{ModuleName}} -RequiredVersion $version -Repository PSGallery -ErrorAction SilentlyContinue
+          $published = Find-Module -Name JsmOperations -RequiredVersion $version -Repository PSGallery -ErrorAction SilentlyContinue
           if ($published) {
             Write-Host "PSGallery version $version already exists"
             "exists=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append

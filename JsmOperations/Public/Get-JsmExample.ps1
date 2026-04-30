@@ -1,7 +1,7 @@
-function Get-{{Prefix}}Example {
+function Get-JsmExample {
     <#
     .SYNOPSIS
-        Example public function for {{ModuleName}}.
+        Example public function for JsmOperations.
 
     .DESCRIPTION
         This is an example public function that demonstrates the standard function template
@@ -11,12 +11,12 @@ function Get-{{Prefix}}Example {
         The name to use in the greeting. If not specified, defaults to 'World'.
 
     .EXAMPLE
-        Get-{{Prefix}}Example
+        Get-JsmExample
 
         Returns a greeting with the default name.
 
     .EXAMPLE
-        Get-{{Prefix}}Example -Name 'PowerShell'
+        Get-JsmExample -Name 'PowerShell'
 
         Returns a greeting with the specified name.
 
@@ -37,12 +37,12 @@ function Get-{{Prefix}}Example {
     )
 
     begin {
-        Write-Verbose "Starting Get-{{Prefix}}Example"
+        Write-Verbose "Starting Get-JsmExample"
     }
 
     process {
         try {
-            $greeting = Invoke-{{Prefix}}Helper -Message "Hello, $Name!"
+            $greeting = Invoke-JsmHelper -Message "Hello, $Name!"
             Write-Output $greeting
         }
         catch {
@@ -51,6 +51,6 @@ function Get-{{Prefix}}Example {
     }
 
     end {
-        Write-Verbose "Completed Get-{{Prefix}}Example"
+        Write-Verbose "Completed Get-JsmExample"
     }
 }

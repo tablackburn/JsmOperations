@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      # Skip lint on the un-initialized template — the literal `./{{ModuleName}}`
+      # Skip lint on the un-initialized template — the literal `./JsmOperations`
       # path argument can't be parsed by PowerShell (the double braces split into
       # mismatched script-block delimiters), so Invoke-ScriptAnalyzer fails with
       # a positional-argument error before it ever touches the folder. Same
@@ -54,7 +54,7 @@ jobs:
         if: steps.template_guard.outputs.is_template == 'false'
         shell: pwsh
         run: |
-          $results = Invoke-ScriptAnalyzer -Path ./{{ModuleName}} -Recurse -Settings PSGallery -ReportSummary
+          $results = Invoke-ScriptAnalyzer -Path ./JsmOperations -Recurse -Settings PSGallery -ReportSummary
           $errors = $results | Where-Object { $_.Severity -eq 'Error' }
 
           if ($results) {
@@ -81,7 +81,7 @@ jobs:
       - uses: actions/checkout@v6
 
       # Skip subsequent steps on the un-initialized template — Build's
-      # GENERATEMARKDOWN task can't import the manifest while {{GUID}} is still
+      # GENERATEMARKDOWN task can't import the manifest while ed5ec128-55d1-4f39-bcbe-73a19f41367a is still
       # a literal placeholder. Marker: CHANGELOG.template.md exists only
       # pre-init; Initialize-Template.ps1 moves it onto CHANGELOG.md during
       # init, so downstream repos run the full job. The marker path contains

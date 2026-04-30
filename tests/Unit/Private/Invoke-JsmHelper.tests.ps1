@@ -31,17 +31,17 @@ BeforeAll {
 }
 
 InModuleScope $Env:BHProjectName {
-    Describe 'Invoke-{{Prefix}}Helper' {
+    Describe 'Invoke-JsmHelper' {
 
         Context 'Basic functionality' {
 
             It 'Returns the processed message' {
-                $result = Invoke-{{Prefix}}Helper -Message 'Test message'
+                $result = Invoke-JsmHelper -Message 'Test message'
                 $result | Should -Be 'Test message'
             }
 
             It 'Trims whitespace from message' {
-                $result = Invoke-{{Prefix}}Helper -Message '  Test message  '
+                $result = Invoke-JsmHelper -Message '  Test message  '
                 $result | Should -Be 'Test message'
             }
         }
@@ -49,18 +49,18 @@ InModuleScope $Env:BHProjectName {
         Context 'Parameter validation' {
 
             It 'Throws on empty message' {
-                { Invoke-{{Prefix}}Helper -Message '' } | Should -Throw
+                { Invoke-JsmHelper -Message '' } | Should -Throw
             }
 
             It 'Throws on null message' {
-                { Invoke-{{Prefix}}Helper -Message $null } | Should -Throw
+                { Invoke-JsmHelper -Message $null } | Should -Throw
             }
         }
 
         Context 'Verbose output' {
 
             It 'Writes verbose messages when -Verbose is specified' {
-                $verboseOutput = Invoke-{{Prefix}}Helper -Message 'Test' -Verbose 4>&1
+                $verboseOutput = Invoke-JsmHelper -Message 'Test' -Verbose 4>&1
                 $verboseOutput | Should -Not -BeNullOrEmpty
             }
         }

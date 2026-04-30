@@ -30,22 +30,22 @@ BeforeAll {
     Import-Module -Name $moduleManifestPath -Force -ErrorAction 'Stop'
 }
 
-Describe 'Get-{{Prefix}}Example' {
+Describe 'Get-JsmExample' {
 
     Context 'Basic functionality' {
 
         It 'Returns a greeting with default name' {
-            $result = Get-{{Prefix}}Example
+            $result = Get-JsmExample
             $result | Should -Be 'Hello, World!'
         }
 
         It 'Returns a greeting with specified name' {
-            $result = Get-{{Prefix}}Example -Name 'PowerShell'
+            $result = Get-JsmExample -Name 'PowerShell'
             $result | Should -Be 'Hello, PowerShell!'
         }
 
         It 'Accepts pipeline input' {
-            $result = 'Test' | Get-{{Prefix}}Example
+            $result = 'Test' | Get-JsmExample
             $result | Should -Be 'Hello, Test!'
         }
     }
@@ -53,18 +53,18 @@ Describe 'Get-{{Prefix}}Example' {
     Context 'Parameter validation' {
 
         It 'Throws on empty name' {
-            { Get-{{Prefix}}Example -Name '' } | Should -Throw
+            { Get-JsmExample -Name '' } | Should -Throw
         }
 
         It 'Throws on null name' {
-            { Get-{{Prefix}}Example -Name $null } | Should -Throw
+            { Get-JsmExample -Name $null } | Should -Throw
         }
     }
 
     Context 'Verbose output' {
 
         It 'Writes verbose messages when -Verbose is specified' {
-            $verboseOutput = Get-{{Prefix}}Example -Name 'Test' -Verbose 4>&1
+            $verboseOutput = Get-JsmExample -Name 'Test' -Verbose 4>&1
             $verboseOutput | Should -Not -BeNullOrEmpty
         }
     }

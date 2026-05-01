@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-04-30
+## [0.1.0] - 2026-05-01
 
 ### Added
 
-- Initial release
-- `Get-JsmExample` - Example public function
+- Initial release. JSM Cloud canonical backend; alerts list / get / acknowledge / close.
+- `Connect-JsmService` - establish in-memory connection (no on-disk persistence; see README for SecretManagement-based persistence).
+- `Disconnect-JsmService` - clear the active connection.
+- `Get-JsmConnection` - inspect the active connection (API token omitted).
+- `Get-JsmAlert` - list alerts (with optional Lucene query, sort, page size) or fetch one by id.
+- `Confirm-JsmAlert` - acknowledge an alert.
+- `Close-JsmAlert` - close an alert.

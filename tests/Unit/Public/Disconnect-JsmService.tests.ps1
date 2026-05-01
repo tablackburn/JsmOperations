@@ -1,0 +1,48 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSUseDeclaredVarsMoreThanAssignments',
+    '',
+    Justification = 'Pester BeforeAll/It scope'
+)]
+param()
+
+BeforeDiscovery {
+    if ($null -eq $Env:BHBuildOutput) {
+        $buildFilePath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\..\build.psake.ps1'
+        $invokePsakeParameters = @{
+            TaskList  = 'Build'
+            BuildFile = $buildFilePath
+        }
+        Invoke-psake @invokePsakeParameters
+    }
+
+    $projectRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
+    $sourceManifest = Join-Path $projectRoot "$Env:BHProjectName/$Env:BHProjectName.psd1"
+    $moduleVersion = (Import-PowerShellDataFile -Path $sourceManifest).ModuleVersion
+    $Env:BHBuildOutput = Join-Path $projectRoot "Output/$Env:BHProjectName/$moduleVersion"
+}
+
+BeforeAll {
+    $moduleManifestPath = Join-Path -Path $Env:BHBuildOutput -ChildPath "$Env:BHProjectName.psd1"
+    Get-Module $Env:BHProjectName | Remove-Module -Force -ErrorAction 'Ignore'
+    Import-Module -Name $moduleManifestPath -Force -ErrorAction 'Stop'
+}
+
+Describe 'Disconnect-JsmService' {
+
+    It 'Clears the active connection' {
+        InModuleScope $Env:BHProjectName {
+            $script:JsmConnection = [pscustomobject]@{ Email = 'm'; CloudId = 'c'; ApiToken = $null; BaseUri = 'b'; ConnectedAt = [datetime]::UtcNow }
+        }
+
+        Disconnect-JsmService
+
+        InModuleScope $Env:BHProjectName {
+            $script:JsmConnection | Should -BeNullOrEmpty
+        }
+    }
+
+    It 'Is idempotent when no connection is active' {
+        InModuleScope $Env:BHProjectName { $script:JsmConnection = $null }
+        { Disconnect-JsmService } | Should -Not -Throw
+    }
+}

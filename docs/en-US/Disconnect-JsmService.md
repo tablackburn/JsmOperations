@@ -5,55 +5,37 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-JsmExample
+# Disconnect-JsmService
 
 ## SYNOPSIS
-Example public function for JsmOperations.
+Clears the in-memory JSM connection.
 
 ## SYNTAX
 
 ```
-Get-JsmExample [[-Name] <String>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Disconnect-JsmService [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-This is an example public function that demonstrates the standard function template
-used in this module.
-Replace this with your actual implementation.
+Removes the connection state set by Connect-JsmService from the module's
+script scope.
+Idempotent - calling without an active connection is not
+an error.
+Subsequent JsmOperations cmdlets will throw a "no active
+connection" error until Connect-JsmService is called again.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Get-JsmExample
+Disconnect-JsmService
 ```
 
-Returns a greeting with the default name.
-
-### EXAMPLE 2
-```
-Get-JsmExample -Name 'PowerShell'
-```
-
-Returns a greeting with the specified name.
+Clears the active connection.
+The next call to Get-JsmAlert (or any
+other cmdlet that hits the API) will throw.
 
 ## PARAMETERS
-
-### -Name
-The name to use in the greeting.
-If not specified, defaults to 'World'.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 1
-Default value: World
-Accept pipeline input: True (ByValue)
-Accept wildcard characters: False
-```
 
 ### -ProgressAction
 {{ Fill ProgressAction Description }}
@@ -77,10 +59,9 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-### System.String
-### Returns a greeting message.
+### None.
 ## NOTES
-This is an example function.
-Replace with your actual implementation.
+Useful at the end of automation scripts or before switching between sites
+in the same session.
 
 ## RELATED LINKS

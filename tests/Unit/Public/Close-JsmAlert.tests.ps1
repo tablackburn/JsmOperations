@@ -6,7 +6,6 @@
 param()
 
 BeforeDiscovery {
-    # Build module if not running in psake build
     if ($null -eq $Env:BHBuildOutput) {
         $buildFilePath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\..\build.psake.ps1'
         $invokePsakeParameters = @{
@@ -16,7 +15,6 @@ BeforeDiscovery {
         Invoke-psake @invokePsakeParameters
     }
 
-    # PowerShellBuild outputs to Output/<ModuleName>/<Version>/
     $projectRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
     $sourceManifest = Join-Path $projectRoot "$Env:BHProjectName/$Env:BHProjectName.psd1"
     $moduleVersion = (Import-PowerShellDataFile -Path $sourceManifest).ModuleVersion
@@ -24,48 +22,42 @@ BeforeDiscovery {
 }
 
 BeforeAll {
-    # Import the module from the build output
     $moduleManifestPath = Join-Path -Path $Env:BHBuildOutput -ChildPath "$Env:BHProjectName.psd1"
     Get-Module $Env:BHProjectName | Remove-Module -Force -ErrorAction 'Ignore'
     Import-Module -Name $moduleManifestPath -Force -ErrorAction 'Stop'
 }
 
-Describe 'Get-JsmExample' {
+Describe 'Close-JsmAlert' {
 
-    Context 'Basic functionality' {
-
-        It 'Returns a greeting with default name' {
-            $result = Get-JsmExample
-            $result | Should -Be 'Hello, World!'
-        }
-
-        It 'Returns a greeting with specified name' {
-            $result = Get-JsmExample -Name 'PowerShell'
-            $result | Should -Be 'Hello, PowerShell!'
-        }
-
-        It 'Accepts pipeline input' {
-            $result = 'Test' | Get-JsmExample
-            $result | Should -Be 'Hello, Test!'
+    It 'POSTs to /alerts/{id}/close with empty body when no note is given' {
+        InModuleScope $Env:BHProjectName {
+            Mock Invoke-JsmApi { @{ requestId = 'r1' } }
+            Close-JsmAlert -Id 'abc-123' | Out-Null
+            Should -Invoke Invoke-JsmApi -Times 1 -ParameterFilter {
+                $Method -eq 'Post' -and
+                $Path -eq '/alerts/abc-123/close' -and
+                $Body.Count -eq 0
+            }
         }
     }
 
-    Context 'Parameter validation' {
-
-        It 'Throws on empty name' {
-            { Get-JsmExample -Name '' } | Should -Throw
-        }
-
-        It 'Throws on null name' {
-            { Get-JsmExample -Name $null } | Should -Throw
+    It 'Includes the note in the body when -Note is supplied' {
+        InModuleScope $Env:BHProjectName {
+            Mock Invoke-JsmApi { @{ requestId = 'r2' } }
+            Close-JsmAlert -Id 'abc-123' -Note 'resolved' | Out-Null
+            Should -Invoke Invoke-JsmApi -Times 1 -ParameterFilter {
+                $Body.note -eq 'resolved'
+            }
         }
     }
 
-    Context 'Verbose output' {
-
-        It 'Writes verbose messages when -Verbose is specified' {
-            $verboseOutput = Get-JsmExample -Name 'Test' -Verbose 4>&1
-            $verboseOutput | Should -Not -BeNullOrEmpty
+    It 'Accepts pipeline input by value' {
+        InModuleScope $Env:BHProjectName {
+            Mock Invoke-JsmApi { @{ requestId = 'r3' } }
+            'piped-id' | Close-JsmAlert | Out-Null
+            Should -Invoke Invoke-JsmApi -Times 1 -ParameterFilter {
+                $Path -eq '/alerts/piped-id/close'
+            }
         }
     }
 }

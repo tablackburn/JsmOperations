@@ -26,22 +26,69 @@ Import-Module ./Output/JsmOperations/*/JsmOperations.psd1
 
 ## Quick Start
 
+JsmOperations targets the JSM Cloud canonical Operations API at
+`https://api.atlassian.com/jsm/ops/api/{cloudId}/v1`. Authentication is HTTP
+Basic with your Atlassian email + an API token from
+<https://id.atlassian.com/manage-profile/security/api-tokens>. Find your
+`cloudId` at `https://<your-site>.atlassian.net/_edge/tenant_info`.
+
+Connection state is **in-memory and per-session** — there is no on-disk
+persistence built into the module. Three usage modes are supported:
+
+### 1. Interactive
+
 ```powershell
-# Import the module
 Import-Module JsmOperations
 
-# Get help for available commands
-Get-Command -Module JsmOperations
+$cred = Get-Credential   # UserName = email, Password = API token
+Connect-JsmService -Credential $cred -CloudId 'xxxx-xxxx-xxxx-xxxx'
 
-# Example usage
-Get-JsmExample -Name 'World'
+Get-JsmAlert -Limit 5
+Get-JsmAlert -Query 'status:open AND priority:P1' | Confirm-JsmAlert -Note 'investigating'
+```
+
+### 2. Persistent (recommended for daily use)
+
+Wire `Connect-JsmService` into your `$PROFILE` via
+[Microsoft.PowerShell.SecretManagement](https://learn.microsoft.com/en-us/powershell/utility-modules/secretmanagement/overview)
+so you only enter the token once per machine:
+
+```powershell
+# One-time setup:
+Install-Module Microsoft.PowerShell.SecretManagement, Microsoft.PowerShell.SecretStore
+Register-SecretVault -Name JsmVault -ModuleName Microsoft.PowerShell.SecretStore -DefaultVault
+Set-Secret -Name JsmApiToken -Secret (Read-Host -AsSecureString)
+
+# Add to $PROFILE:
+Connect-JsmService -Email 'me@example.com' -ApiToken (Get-Secret JsmApiToken) -CloudId 'xxxx-xxxx-xxxx-xxxx'
+```
+
+SecretStore is cross-platform (Windows / Linux / macOS) and uses .NET crypto APIs
+to protect the vault on disk.
+
+### 3. Unattended / CI
+
+When the corresponding parameter is omitted, `Connect-JsmService` falls back to
+environment variables:
+
+```powershell
+$env:JSM_EMAIL     = 'me@example.com'
+$env:JSM_API_TOKEN = '...'
+$env:JSM_CLOUD_ID  = 'xxxx-xxxx-xxxx-xxxx'
+
+Connect-JsmService    # picks up all three from env
 ```
 
 ## Available Commands
 
 | Command | Description |
 |---------|-------------|
-| `Get-JsmExample` | Example public function |
+| `Connect-JsmService` | Establish an in-memory connection. |
+| `Disconnect-JsmService` | Clear the active connection. |
+| `Get-JsmConnection` | Inspect the active connection (token omitted). |
+| `Get-JsmAlert` | List alerts (with `-Query` / `-Limit` / `-OrderBy`) or fetch one by `-Id`. |
+| `Confirm-JsmAlert` | Acknowledge an alert (optionally with a `-Note`). |
+| `Close-JsmAlert` | Close an alert (optionally with a `-Note`). |
 
 ## Development
 

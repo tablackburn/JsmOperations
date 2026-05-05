@@ -102,6 +102,14 @@ InModuleScope $Env:BHProjectName {
                     -not $PSBoundParameters.ContainsKey('Body')
                 }
             }
+
+            It 'Omits Body when supplied as empty hashtable' {
+                Mock Invoke-RestMethod { @{ ok = $true } }
+                Invoke-JsmApi -Method Post -Path '/alerts/abc/acknowledge' -Body @{} | Out-Null
+                Should -Invoke Invoke-RestMethod -Times 1 -ParameterFilter {
+                    -not $PSBoundParameters.ContainsKey('Body')
+                }
+            }
         }
 
         Context 'Error propagation' {

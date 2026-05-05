@@ -91,7 +91,7 @@ function Invoke-JsmApi {
                 ContentType = 'application/json'
                 ErrorAction = 'Stop'
             }
-            if ($PSBoundParameters.ContainsKey('Body')) {
+            if ($Body -and $Body.Count -gt 0) {
                 $invokeParameters.Body = ($Body | ConvertTo-Json -Depth 10 -Compress)
             }
 

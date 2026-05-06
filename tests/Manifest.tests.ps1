@@ -214,7 +214,7 @@ Describe 'Module manifest' {
                 if (@($dependencyRawData).Count -gt 1) {
                     throw "Duplicate RequiredModules entry found for '$dependencyName'"
                 }
-                # Handle plain-string module references (not hashtables with version info)
+                # Handle plain-string module references (not hashtables with version information)
                 if ($dependencyRawData -isnot [hashtable]) {
                     $dependencyRawData = $null
                 }

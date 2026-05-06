@@ -50,8 +50,8 @@ the original error rethrown.
 
 ### EXAMPLE 1
 ```
-$cred = Get-Credential
-Connect-JsmService -Credential $cred -CloudId 'xxxx-xxxx-xxxx-xxxx'
+$credential = Get-Credential
+Connect-JsmService -Credential $credential -CloudId 'xxxx-xxxx-xxxx-xxxx'
 ```
 
 Connects using a PSCredential where the user enters email + token interactively.

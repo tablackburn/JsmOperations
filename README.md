@@ -40,8 +40,8 @@ persistence built into the module. Three usage modes are supported:
 ```powershell
 Import-Module JsmOperations
 
-$cred = Get-Credential   # UserName = email, Password = API token
-Connect-JsmService -Credential $cred -CloudId 'xxxx-xxxx-xxxx-xxxx'
+$credential = Get-Credential   # UserName = email, Password = API token
+Connect-JsmService -Credential $credential -CloudId 'xxxx-xxxx-xxxx-xxxx'
 
 Get-JsmAlert -Limit 5
 Get-JsmAlert -Query 'status:open AND priority:P1' | Confirm-JsmAlert -Note 'investigating'

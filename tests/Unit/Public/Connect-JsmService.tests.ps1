@@ -61,7 +61,7 @@ Describe 'Connect-JsmService' {
                 Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ values = @() } }
             }
 
-            $token = New-TestSecureString -Value 'tok-1'
+            $token = New-TestSecureString -Value 'token-1'
             Connect-JsmService -Email 'me@example.com' -ApiToken $token -CloudId 'c1'
 
             InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
@@ -79,12 +79,12 @@ Describe 'Connect-JsmService' {
                 Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ values = @() } }
             }
 
-            $token = New-TestSecureString -Value 'tok-2'
-            $cred = [pscredential]::new('cred@example.com', $token)
-            Connect-JsmService -Credential $cred -CloudId 'c2'
+            $token = New-TestSecureString -Value 'token-2'
+            $credential = [pscredential]::new('credential@example.com', $token)
+            Connect-JsmService -Credential $credential -CloudId 'c2'
 
             InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
-                $script:JsmConnection.Email | Should -Be 'cred@example.com'
+                $script:JsmConnection.Email | Should -Be 'credential@example.com'
                 $script:JsmConnection.CloudId | Should -Be 'c2'
             }
         }
@@ -92,19 +92,19 @@ Describe 'Connect-JsmService' {
 
     Context 'Environment variable fallback' {
 
-        It 'Reads JSM_EMAIL / JSM_API_TOKEN / JSM_CLOUD_ID when params are omitted' {
+        It 'Reads JSM_EMAIL / JSM_API_TOKEN / JSM_CLOUD_ID when parameters are omitted' {
             InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
                 Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ values = @() } }
             }
-            $env:JSM_EMAIL = 'env@example.com'
-            $env:JSM_API_TOKEN = 'env-token'
-            $env:JSM_CLOUD_ID = 'env-cloud'
+            $env:JSM_EMAIL = 'environment@example.com'
+            $env:JSM_API_TOKEN = 'environment-token'
+            $env:JSM_CLOUD_ID = 'environment-cloud'
 
             Connect-JsmService
 
             InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
-                $script:JsmConnection.Email | Should -Be 'env@example.com'
-                $script:JsmConnection.CloudId | Should -Be 'env-cloud'
+                $script:JsmConnection.Email | Should -Be 'environment@example.com'
+                $script:JsmConnection.CloudId | Should -Be 'environment-cloud'
             }
         }
     }
@@ -112,7 +112,7 @@ Describe 'Connect-JsmService' {
     Context 'Validation' {
 
         It 'Throws when email is missing entirely' {
-            $token = New-TestSecureString -Value 'tok'
+            $token = New-TestSecureString -Value 'token'
             { Connect-JsmService -ApiToken $token -CloudId 'c1' } |
                 Should -Throw -ExpectedMessage '*Email is required*'
         }
@@ -123,18 +123,18 @@ Describe 'Connect-JsmService' {
         }
 
         It 'Throws when CloudId is missing entirely' {
-            $token = New-TestSecureString -Value 'tok'
+            $token = New-TestSecureString -Value 'token'
             { Connect-JsmService -Email 'me@example.com' -ApiToken $token } |
                 Should -Throw -ExpectedMessage '*CloudId is required*'
         }
 
         It 'Fails parameter binding when -Email is explicitly empty' {
-            $token = New-TestSecureString -Value 'tok'
+            $token = New-TestSecureString -Value 'token'
             { Connect-JsmService -Email '' -ApiToken $token -CloudId 'c1' } | Should -Throw
         }
 
         It 'Fails parameter binding when -CloudId is explicitly empty' {
-            $token = New-TestSecureString -Value 'tok'
+            $token = New-TestSecureString -Value 'token'
             { Connect-JsmService -Email 'me@example.com' -ApiToken $token -CloudId '' } | Should -Throw
         }
     }
@@ -162,7 +162,7 @@ Describe 'Connect-JsmService' {
             InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
                 Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ values = @() } }
             }
-            $token = New-TestSecureString -Value 'tok'
+            $token = New-TestSecureString -Value 'token'
 
             $result = Connect-JsmService -Email 'me@example.com' -ApiToken $token -CloudId 'c1' -PassThru
 

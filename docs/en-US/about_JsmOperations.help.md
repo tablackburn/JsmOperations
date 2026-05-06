@@ -31,8 +31,8 @@ Cmdlets return the deserialized JSON from the API without reshaping.
 Connect, acknowledge an open P1, then close it:
 
 ```powershell
-$cred = Get-Credential  # UserName = email, Password = API token
-Connect-JsmService -Credential $cred -CloudId 'xxxx-xxxx-xxxx-xxxx'
+$credential = Get-Credential  # UserName = email, Password = API token
+Connect-JsmService -Credential $credential -CloudId 'xxxx-xxxx-xxxx-xxxx'
 
 Get-JsmAlert -Query 'status:open AND priority:P1' -Limit 1 |
     Confirm-JsmAlert -Note 'On it'

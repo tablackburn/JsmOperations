@@ -27,7 +27,7 @@ function Disconnect-JsmService {
     param()
 
     begin {
-        Write-Verbose -Message 'Starting Disconnect-JsmService'
+        Write-Verbose 'Starting Disconnect-JsmService'
     }
 
     process {
@@ -35,6 +35,6 @@ function Disconnect-JsmService {
     }
 
     end {
-        Write-Verbose -Message 'Completed Disconnect-JsmService'
+        Write-Verbose 'Completed Disconnect-JsmService'
     }
 }

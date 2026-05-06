@@ -55,7 +55,7 @@ function Confirm-JsmAlert {
     )
 
     begin {
-        Write-Verbose -Message 'Starting Confirm-JsmAlert'
+        Write-Verbose 'Starting Confirm-JsmAlert'
     }
 
     process {
@@ -65,7 +65,7 @@ function Confirm-JsmAlert {
                 $body.note = $Note
             }
             $response = Invoke-JsmApi -Method 'Post' -Path "/alerts/$Id/acknowledge" -Body $body
-            Write-Output -InputObject $response
+            Write-Output $response
         }
         catch {
             throw
@@ -73,6 +73,6 @@ function Confirm-JsmAlert {
     }
 
     end {
-        Write-Verbose -Message 'Completed Confirm-JsmAlert'
+        Write-Verbose 'Completed Confirm-JsmAlert'
     }
 }

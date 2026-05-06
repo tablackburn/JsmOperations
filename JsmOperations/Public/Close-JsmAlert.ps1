@@ -54,7 +54,7 @@ function Close-JsmAlert {
     )
 
     begin {
-        Write-Verbose -Message 'Starting Close-JsmAlert'
+        Write-Verbose 'Starting Close-JsmAlert'
     }
 
     process {
@@ -64,7 +64,7 @@ function Close-JsmAlert {
                 $body.note = $Note
             }
             $response = Invoke-JsmApi -Method 'Post' -Path "/alerts/$Id/close" -Body $body
-            Write-Output -InputObject $response
+            Write-Output $response
         }
         catch {
             throw
@@ -72,6 +72,6 @@ function Close-JsmAlert {
     }
 
     end {
-        Write-Verbose -Message 'Completed Close-JsmAlert'
+        Write-Verbose 'Completed Close-JsmAlert'
     }
 }

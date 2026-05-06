@@ -93,7 +93,7 @@ function Connect-JsmService {
     )
 
     begin {
-        Write-Verbose -Message 'Starting Connect-JsmService'
+        Write-Verbose 'Starting Connect-JsmService'
     }
 
     process {
@@ -164,6 +164,6 @@ function Connect-JsmService {
     }
 
     end {
-        Write-Verbose -Message 'Completed Connect-JsmService'
+        Write-Verbose 'Completed Connect-JsmService'
     }
 }

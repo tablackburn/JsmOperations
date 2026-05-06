@@ -94,14 +94,14 @@ function Get-JsmAlert {
     )
 
     begin {
-        Write-Verbose -Message 'Starting Get-JsmAlert'
+        Write-Verbose 'Starting Get-JsmAlert'
     }
 
     process {
         try {
             if ($PSCmdlet.ParameterSetName -eq 'ById') {
                 $response = Invoke-JsmApi -Method 'Get' -Path "/alerts/$Id"
-                Write-Output -InputObject $response
+                Write-Output $response
             }
             else {
                 $queryParams = @{
@@ -114,7 +114,7 @@ function Get-JsmAlert {
                 }
                 $response = Invoke-JsmApi -Method 'Get' -Path '/alerts' -Query $queryParams
                 if ($null -ne $response.values) {
-                    Write-Output -InputObject $response.values
+                    Write-Output $response.values
                 }
             }
         }
@@ -124,6 +124,6 @@ function Get-JsmAlert {
     }
 
     end {
-        Write-Verbose -Message 'Completed Get-JsmAlert'
+        Write-Verbose 'Completed Get-JsmAlert'
     }
 }

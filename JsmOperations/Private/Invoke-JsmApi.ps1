@@ -6,7 +6,7 @@ function Invoke-JsmApi {
     .DESCRIPTION
         Single private helper that every public JsmOperations cmdlet routes through.
         Reads the active connection from script-scoped state (set by Connect-JsmService),
-        builds Basic auth headers from the SecureString token, and invokes the REST call.
+        builds Basic authentication headers from the SecureString token, and invokes the REST call.
 
         Not exported; not callable by module consumers.
 

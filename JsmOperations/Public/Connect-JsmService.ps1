@@ -62,7 +62,7 @@ function Connect-JsmService {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
         'PSAvoidUsingConvertToSecureStringWithPlainText',
         '',
-        Justification = 'Plaintext source is JSM_API_TOKEN env var - intentional fallback for unattended/CI scenarios where the host secret store provisions the env var.'
+        Justification = 'Plaintext source is JSM_API_TOKEN environment variable - intentional fallback for unattended/CI scenarios where the host secret store provisions the environment variable.'
     )]
     [CmdletBinding(DefaultParameterSetName = 'Email')]
     [OutputType([pscustomobject])]

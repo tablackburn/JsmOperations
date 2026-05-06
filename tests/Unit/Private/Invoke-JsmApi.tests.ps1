@@ -80,7 +80,7 @@ InModuleScope $Env:BHProjectName {
         }
 
         Context 'Authorization header' {
-            It 'Builds Basic auth from email + token' {
+            It 'Builds Basic authentication from email + token' {
                 Mock -CommandName 'Invoke-RestMethod' -MockWith { @{ ok = $true } }
                 Invoke-JsmApi -Method 'Get' -Path '/alerts' | Out-Null
                 Should -Invoke -CommandName 'Invoke-RestMethod' -Times 1 -ParameterFilter {

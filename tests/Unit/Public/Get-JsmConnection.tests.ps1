@@ -46,12 +46,12 @@ Describe 'Get-JsmConnection' {
     }
 
     It 'Returns a view of the connection without ApiToken' {
-        $tok = New-TestSecureString -Value 'tok'
-        InModuleScope -ModuleName $Env:BHProjectName -Parameters @{ Tok = $tok } -ScriptBlock {
-            param($Tok)
+        $apiToken = New-TestSecureString -Value 'tok'
+        InModuleScope -ModuleName $Env:BHProjectName -Parameters @{ ApiToken = $apiToken } -ScriptBlock {
+            param($ApiToken)
             $script:JsmConnection = [pscustomobject]@{
                 Email       = 'me@example.com'
-                ApiToken    = $Tok
+                ApiToken    = $ApiToken
                 CloudId     = 'c1'
                 BaseUri     = 'https://api.atlassian.com/jsm/ops/api/c1/v1'
                 ConnectedAt = [datetime]::UtcNow

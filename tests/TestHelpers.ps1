@@ -22,7 +22,7 @@ function New-TestSecureString {
     )
 
     $secure = [System.Security.SecureString]::new()
-    foreach ($c in $Value.ToCharArray()) { $secure.AppendChar($c) }
+    foreach ($char in $Value.ToCharArray()) { $secure.AppendChar($char) }
     $secure.MakeReadOnly()
     $secure
 }

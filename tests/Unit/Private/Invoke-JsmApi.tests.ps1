@@ -38,7 +38,7 @@ InModuleScope $Env:BHProjectName {
 
         BeforeEach {
             $secureToken = [System.Security.SecureString]::new()
-            foreach ($c in 'fake-token'.ToCharArray()) { $secureToken.AppendChar($c) }
+            foreach ($char in 'fake-token'.ToCharArray()) { $secureToken.AppendChar($char) }
             $secureToken.MakeReadOnly()
             $script:JsmConnection = [pscustomobject]@{
                 Email       = 'me@example.com'

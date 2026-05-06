@@ -68,21 +68,21 @@ function Invoke-JsmApi {
             $uri = $script:JsmConnection.BaseUri + $Path
 
             if ($Query -and $Query.Count -gt 0) {
-                $pairs = foreach ($entry in $Query.GetEnumerator()) {
-                    $key = [uri]::EscapeDataString($entry.Key)
-                    $val = [uri]::EscapeDataString([string]$entry.Value)
-                    "$key=$val"
+                $queryStringPairs = foreach ($entry in $Query.GetEnumerator()) {
+                    $encodedKey = [uri]::EscapeDataString($entry.Key)
+                    $encodedValue = [uri]::EscapeDataString([string]$entry.Value)
+                    "$encodedKey=$encodedValue"
                 }
-                $uri = $uri + '?' + ($pairs -join '&')
+                $uri = $uri + '?' + ($queryStringPairs -join '&')
             }
 
             $tokenPlain = [pscredential]::new(
                 'jsm',
                 $script:JsmConnection.ApiToken
             ).GetNetworkCredential().Password
-            $pair = "$($script:JsmConnection.Email):$tokenPlain"
-            $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($pair))
-            $headers = @{ Authorization = "Basic $b64" }
+            $basicAuthCredential = "$($script:JsmConnection.Email):$tokenPlain"
+            $basicAuthToken = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($basicAuthCredential))
+            $headers = @{ Authorization = "Basic $basicAuthToken" }
 
             $invokeParameters = @{
                 Method      = $Method

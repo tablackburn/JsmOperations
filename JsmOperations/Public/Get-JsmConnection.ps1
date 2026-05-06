@@ -33,12 +33,12 @@ function Get-JsmConnection {
     param()
 
     begin {
-        Write-Verbose "Starting Get-JsmConnection"
+        Write-Verbose -Message 'Starting Get-JsmConnection'
     }
 
     process {
         if ($null -eq $script:JsmConnection) {
-            Write-Output $null
+            Write-Output -InputObject $null
             return
         }
 
@@ -48,10 +48,10 @@ function Get-JsmConnection {
             BaseUri     = $script:JsmConnection.BaseUri
             ConnectedAt = $script:JsmConnection.ConnectedAt
         }
-        Write-Output $view
+        Write-Output -InputObject $view
     }
 
     end {
-        Write-Verbose "Completed Get-JsmConnection"
+        Write-Verbose -Message 'Completed Get-JsmConnection'
     }
 }

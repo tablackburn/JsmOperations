@@ -57,7 +57,7 @@ function Invoke-JsmApi {
     )
 
     begin {
-        Write-Verbose "Starting Invoke-JsmApi"
+        Write-Verbose -Message 'Starting Invoke-JsmApi'
         if ($null -eq $script:JsmConnection) {
             throw 'No active JSM connection. Run Connect-JsmService before calling other JsmOperations cmdlets.'
         }
@@ -95,9 +95,9 @@ function Invoke-JsmApi {
                 $invokeParameters.Body = ($Body | ConvertTo-Json -Depth 10 -Compress)
             }
 
-            Write-Verbose "Calling $Method $uri"
+            Write-Verbose -Message "Calling $Method $uri"
             $response = Invoke-RestMethod @invokeParameters
-            Write-Output $response
+            Write-Output -InputObject $response
         }
         catch {
             throw
@@ -105,6 +105,6 @@ function Invoke-JsmApi {
     }
 
     end {
-        Write-Verbose "Completed Invoke-JsmApi"
+        Write-Verbose -Message 'Completed Invoke-JsmApi'
     }
 }

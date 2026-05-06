@@ -67,14 +67,23 @@ function Get-JsmAlert {
         $Id,
 
         [Parameter(ParameterSetName = 'List')]
+        [ValidateNotNullOrEmpty()]
         [string]
         $Query,
 
         [Parameter(ParameterSetName = 'List')]
+        [ValidateRange(1, 100)]
         [int]
         $Limit = 20,
 
         [Parameter(ParameterSetName = 'List')]
+        [ValidateSet(
+            'createdAt', 'updatedAt', 'tinyId', 'alias', 'message', 'status',
+            'acknowledged', 'isSeen', 'snoozed', 'snoozedUntil', 'count',
+            'lastOccurredAt', 'source', 'owner', 'integration.name',
+            'integration.type', 'report.ackTime', 'report.closeTime',
+            'report.acknowledgedBy', 'report.closedBy'
+        )]
         [string]
         $OrderBy = 'updatedAt',
 
@@ -85,14 +94,14 @@ function Get-JsmAlert {
     )
 
     begin {
-        Write-Verbose "Starting Get-JsmAlert"
+        Write-Verbose -Message 'Starting Get-JsmAlert'
     }
 
     process {
         try {
             if ($PSCmdlet.ParameterSetName -eq 'ById') {
-                $response = Invoke-JsmApi -Method Get -Path "/alerts/$Id"
-                Write-Output $response
+                $response = Invoke-JsmApi -Method 'Get' -Path "/alerts/$Id"
+                Write-Output -InputObject $response
             }
             else {
                 $queryParams = @{
@@ -103,9 +112,9 @@ function Get-JsmAlert {
                 if (-not [string]::IsNullOrWhiteSpace($Query)) {
                     $queryParams.query = $Query
                 }
-                $response = Invoke-JsmApi -Method Get -Path '/alerts' -Query $queryParams
+                $response = Invoke-JsmApi -Method 'Get' -Path '/alerts' -Query $queryParams
                 if ($null -ne $response.values) {
-                    Write-Output $response.values
+                    Write-Output -InputObject $response.values
                 }
             }
         }
@@ -115,6 +124,6 @@ function Get-JsmAlert {
     }
 
     end {
-        Write-Verbose "Completed Get-JsmAlert"
+        Write-Verbose -Message 'Completed Get-JsmAlert'
     }
 }

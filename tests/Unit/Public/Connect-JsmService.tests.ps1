@@ -11,7 +11,8 @@ BeforeDiscovery {
         # the values it needs (BHPSModuleManifest, BHProjectName) — when running
         # via ./build.ps1 this happens before psake; running tests in isolation
         # bypasses that, so we do it here.
-        Set-BuildEnvironment -Path (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))) -Force
+        $repoRoot = Split-Path -Path (Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent) -Parent
+        Set-BuildEnvironment -Path $repoRoot -Force
         $buildFilePath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\..\build.psake.ps1'
         $invokePsakeParameters = @{
             TaskList  = 'Build'
@@ -20,17 +21,17 @@ BeforeDiscovery {
         Invoke-psake @invokePsakeParameters
     }
 
-    $projectRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
-    $sourceManifest = Join-Path $projectRoot "$Env:BHProjectName/$Env:BHProjectName.psd1"
+    $projectRoot = Split-Path -Path (Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent) -Parent
+    $sourceManifest = Join-Path -Path $projectRoot -ChildPath "$Env:BHProjectName/$Env:BHProjectName.psd1"
     $moduleVersion = (Import-PowerShellDataFile -Path $sourceManifest).ModuleVersion
-    $Env:BHBuildOutput = Join-Path $projectRoot "Output/$Env:BHProjectName/$moduleVersion"
+    $Env:BHBuildOutput = Join-Path -Path $projectRoot -ChildPath "Output/$Env:BHProjectName/$moduleVersion"
 }
 
 BeforeAll {
     $moduleManifestPath = Join-Path -Path $Env:BHBuildOutput -ChildPath "$Env:BHProjectName.psd1"
-    Get-Module $Env:BHProjectName | Remove-Module -Force -ErrorAction 'Ignore'
+    Get-Module -Name $Env:BHProjectName | Remove-Module -Force -ErrorAction 'Ignore'
     Import-Module -Name $moduleManifestPath -Force -ErrorAction 'Stop'
-    . (Join-Path $PSScriptRoot '..\..\TestHelpers.ps1')
+    . (Join-Path -Path $PSScriptRoot -ChildPath '..\..\TestHelpers.ps1')
 }
 
 Describe 'Connect-JsmService' {
@@ -40,28 +41,30 @@ Describe 'Connect-JsmService' {
         $script:savedEmail = $env:JSM_EMAIL
         $script:savedToken = $env:JSM_API_TOKEN
         $script:savedCloud = $env:JSM_CLOUD_ID
-        Remove-Item Env:JSM_EMAIL -ErrorAction SilentlyContinue
-        Remove-Item Env:JSM_API_TOKEN -ErrorAction SilentlyContinue
-        Remove-Item Env:JSM_CLOUD_ID -ErrorAction SilentlyContinue
-        InModuleScope $Env:BHProjectName { $script:JsmConnection = $null }
+        Remove-Item -Path 'Env:JSM_EMAIL' -ErrorAction 'SilentlyContinue'
+        Remove-Item -Path 'Env:JSM_API_TOKEN' -ErrorAction 'SilentlyContinue'
+        Remove-Item -Path 'Env:JSM_CLOUD_ID' -ErrorAction 'SilentlyContinue'
+        InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock { $script:JsmConnection = $null }
     }
 
     AfterEach {
         if ($null -ne $script:savedEmail) { $env:JSM_EMAIL = $script:savedEmail }
         if ($null -ne $script:savedToken) { $env:JSM_API_TOKEN = $script:savedToken }
         if ($null -ne $script:savedCloud) { $env:JSM_CLOUD_ID = $script:savedCloud }
-        InModuleScope $Env:BHProjectName { $script:JsmConnection = $null }
+        InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock { $script:JsmConnection = $null }
     }
 
     Context 'Email parameter set' {
 
         It 'Sets script-scoped connection from -Email + -ApiToken + -CloudId' {
-            InModuleScope $Env:BHProjectName { Mock Invoke-JsmApi { @{ values = @() } } }
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ values = @() } }
+            }
 
-            $token = New-TestSecureString 'tok-1'
+            $token = New-TestSecureString -Value 'tok-1'
             Connect-JsmService -Email 'me@example.com' -ApiToken $token -CloudId 'c1'
 
-            InModuleScope $Env:BHProjectName {
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
                 $script:JsmConnection.Email | Should -Be 'me@example.com'
                 $script:JsmConnection.CloudId | Should -Be 'c1'
                 $script:JsmConnection.BaseUri | Should -Be 'https://api.atlassian.com/jsm/ops/api/c1/v1'
@@ -72,13 +75,15 @@ Describe 'Connect-JsmService' {
     Context 'Credential parameter set' {
 
         It 'Sets connection from a PSCredential' {
-            InModuleScope $Env:BHProjectName { Mock Invoke-JsmApi { @{ values = @() } } }
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ values = @() } }
+            }
 
-            $token = New-TestSecureString 'tok-2'
+            $token = New-TestSecureString -Value 'tok-2'
             $cred = [pscredential]::new('cred@example.com', $token)
             Connect-JsmService -Credential $cred -CloudId 'c2'
 
-            InModuleScope $Env:BHProjectName {
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
                 $script:JsmConnection.Email | Should -Be 'cred@example.com'
                 $script:JsmConnection.CloudId | Should -Be 'c2'
             }
@@ -88,14 +93,16 @@ Describe 'Connect-JsmService' {
     Context 'Environment variable fallback' {
 
         It 'Reads JSM_EMAIL / JSM_API_TOKEN / JSM_CLOUD_ID when params are omitted' {
-            InModuleScope $Env:BHProjectName { Mock Invoke-JsmApi { @{ values = @() } } }
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ values = @() } }
+            }
             $env:JSM_EMAIL = 'env@example.com'
             $env:JSM_API_TOKEN = 'env-token'
             $env:JSM_CLOUD_ID = 'env-cloud'
 
             Connect-JsmService
 
-            InModuleScope $Env:BHProjectName {
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
                 $script:JsmConnection.Email | Should -Be 'env@example.com'
                 $script:JsmConnection.CloudId | Should -Be 'env-cloud'
             }
@@ -105,7 +112,7 @@ Describe 'Connect-JsmService' {
     Context 'Validation' {
 
         It 'Throws when email is missing entirely' {
-            $token = New-TestSecureString 'tok'
+            $token = New-TestSecureString -Value 'tok'
             { Connect-JsmService -ApiToken $token -CloudId 'c1' } |
                 Should -Throw -ExpectedMessage '*Email is required*'
         }
@@ -116,24 +123,34 @@ Describe 'Connect-JsmService' {
         }
 
         It 'Throws when CloudId is missing entirely' {
-            $token = New-TestSecureString 'tok'
+            $token = New-TestSecureString -Value 'tok'
             { Connect-JsmService -Email 'me@example.com' -ApiToken $token } |
                 Should -Throw -ExpectedMessage '*CloudId is required*'
+        }
+
+        It 'Fails parameter binding when -Email is explicitly empty' {
+            $token = New-TestSecureString -Value 'tok'
+            { Connect-JsmService -Email '' -ApiToken $token -CloudId 'c1' } | Should -Throw
+        }
+
+        It 'Fails parameter binding when -CloudId is explicitly empty' {
+            $token = New-TestSecureString -Value 'tok'
+            { Connect-JsmService -Email 'me@example.com' -ApiToken $token -CloudId '' } | Should -Throw
         }
     }
 
     Context 'Smoke test' {
 
         It 'Clears connection and rethrows when smoke test fails' {
-            InModuleScope $Env:BHProjectName {
-                Mock Invoke-JsmApi { throw 'HTTP 401' }
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                Mock -CommandName 'Invoke-JsmApi' -MockWith { throw 'HTTP 401' }
             }
-            $token = New-TestSecureString 'bad'
+            $token = New-TestSecureString -Value 'bad'
 
             { Connect-JsmService -Email 'me@example.com' -ApiToken $token -CloudId 'c1' } |
                 Should -Throw '*HTTP 401*'
 
-            InModuleScope $Env:BHProjectName {
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
                 $script:JsmConnection | Should -BeNullOrEmpty
             }
         }
@@ -142,8 +159,10 @@ Describe 'Connect-JsmService' {
     Context 'PassThru' {
 
         It 'Emits the connection object (without ApiToken) when -PassThru is set' {
-            InModuleScope $Env:BHProjectName { Mock Invoke-JsmApi { @{ values = @() } } }
-            $token = New-TestSecureString 'tok'
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ values = @() } }
+            }
+            $token = New-TestSecureString -Value 'tok'
 
             $result = Connect-JsmService -Email 'me@example.com' -ApiToken $token -CloudId 'c1' -PassThru
 

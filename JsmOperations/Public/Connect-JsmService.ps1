@@ -73,14 +73,17 @@ function Connect-JsmService {
         $Credential,
 
         [Parameter(ParameterSetName = 'Email')]
+        [ValidateNotNullOrEmpty()]
         [string]
         $Email,
 
         [Parameter(ParameterSetName = 'Email')]
+        [ValidateNotNull()]
         [securestring]
         $ApiToken,
 
         [Parameter()]
+        [ValidateNotNullOrEmpty()]
         [string]
         $CloudId,
 
@@ -90,7 +93,7 @@ function Connect-JsmService {
     )
 
     begin {
-        Write-Verbose "Starting Connect-JsmService"
+        Write-Verbose -Message 'Starting Connect-JsmService'
     }
 
     process {
@@ -144,7 +147,7 @@ function Connect-JsmService {
             }
 
             try {
-                $null = Invoke-JsmApi -Method Get -Path '/alerts' -Query @{ size = 1 }
+                $null = Invoke-JsmApi -Method 'Get' -Path '/alerts' -Query @{ size = 1 }
             }
             catch {
                 $script:JsmConnection = $null
@@ -161,6 +164,6 @@ function Connect-JsmService {
     }
 
     end {
-        Write-Verbose "Completed Connect-JsmService"
+        Write-Verbose -Message 'Completed Connect-JsmService'
     }
 }

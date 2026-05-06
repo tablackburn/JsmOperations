@@ -49,12 +49,13 @@ function Confirm-JsmAlert {
         $Id,
 
         [Parameter()]
+        [ValidateNotNullOrEmpty()]
         [string]
         $Note
     )
 
     begin {
-        Write-Verbose "Starting Confirm-JsmAlert"
+        Write-Verbose -Message 'Starting Confirm-JsmAlert'
     }
 
     process {
@@ -63,8 +64,8 @@ function Confirm-JsmAlert {
             if ($PSBoundParameters.ContainsKey('Note')) {
                 $body.note = $Note
             }
-            $response = Invoke-JsmApi -Method Post -Path "/alerts/$Id/acknowledge" -Body $body
-            Write-Output $response
+            $response = Invoke-JsmApi -Method 'Post' -Path "/alerts/$Id/acknowledge" -Body $body
+            Write-Output -InputObject $response
         }
         catch {
             throw
@@ -72,6 +73,6 @@ function Confirm-JsmAlert {
     }
 
     end {
-        Write-Verbose "Completed Confirm-JsmAlert"
+        Write-Verbose -Message 'Completed Confirm-JsmAlert'
     }
 }

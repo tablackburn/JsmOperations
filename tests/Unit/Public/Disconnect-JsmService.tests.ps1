@@ -11,7 +11,8 @@ BeforeDiscovery {
         # the values it needs (BHPSModuleManifest, BHProjectName) — when running
         # via ./build.ps1 this happens before psake; running tests in isolation
         # bypasses that, so we do it here.
-        Set-BuildEnvironment -Path (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))) -Force
+        $repoRoot = Split-Path -Path (Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent) -Parent
+        Set-BuildEnvironment -Path $repoRoot -Force
         $buildFilePath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\..\build.psake.ps1'
         $invokePsakeParameters = @{
             TaskList  = 'Build'
@@ -20,34 +21,34 @@ BeforeDiscovery {
         Invoke-psake @invokePsakeParameters
     }
 
-    $projectRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
-    $sourceManifest = Join-Path $projectRoot "$Env:BHProjectName/$Env:BHProjectName.psd1"
+    $projectRoot = Split-Path -Path (Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent) -Parent
+    $sourceManifest = Join-Path -Path $projectRoot -ChildPath "$Env:BHProjectName/$Env:BHProjectName.psd1"
     $moduleVersion = (Import-PowerShellDataFile -Path $sourceManifest).ModuleVersion
-    $Env:BHBuildOutput = Join-Path $projectRoot "Output/$Env:BHProjectName/$moduleVersion"
+    $Env:BHBuildOutput = Join-Path -Path $projectRoot -ChildPath "Output/$Env:BHProjectName/$moduleVersion"
 }
 
 BeforeAll {
     $moduleManifestPath = Join-Path -Path $Env:BHBuildOutput -ChildPath "$Env:BHProjectName.psd1"
-    Get-Module $Env:BHProjectName | Remove-Module -Force -ErrorAction 'Ignore'
+    Get-Module -Name $Env:BHProjectName | Remove-Module -Force -ErrorAction 'Ignore'
     Import-Module -Name $moduleManifestPath -Force -ErrorAction 'Stop'
 }
 
 Describe 'Disconnect-JsmService' {
 
     It 'Clears the active connection' {
-        InModuleScope $Env:BHProjectName {
+        InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
             $script:JsmConnection = [pscustomobject]@{ Email = 'm'; CloudId = 'c'; ApiToken = $null; BaseUri = 'b'; ConnectedAt = [datetime]::UtcNow }
         }
 
         Disconnect-JsmService
 
-        InModuleScope $Env:BHProjectName {
+        InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
             $script:JsmConnection | Should -BeNullOrEmpty
         }
     }
 
     It 'Is idempotent when no connection is active' {
-        InModuleScope $Env:BHProjectName { $script:JsmConnection = $null }
+        InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock { $script:JsmConnection = $null }
         { Disconnect-JsmService } | Should -Not -Throw
     }
 }

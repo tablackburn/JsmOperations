@@ -48,12 +48,13 @@ function Close-JsmAlert {
         $Id,
 
         [Parameter()]
+        [ValidateNotNullOrEmpty()]
         [string]
         $Note
     )
 
     begin {
-        Write-Verbose "Starting Close-JsmAlert"
+        Write-Verbose -Message 'Starting Close-JsmAlert'
     }
 
     process {
@@ -62,8 +63,8 @@ function Close-JsmAlert {
             if ($PSBoundParameters.ContainsKey('Note')) {
                 $body.note = $Note
             }
-            $response = Invoke-JsmApi -Method Post -Path "/alerts/$Id/close" -Body $body
-            Write-Output $response
+            $response = Invoke-JsmApi -Method 'Post' -Path "/alerts/$Id/close" -Body $body
+            Write-Output -InputObject $response
         }
         catch {
             throw
@@ -71,6 +72,6 @@ function Close-JsmAlert {
     }
 
     end {
-        Write-Verbose "Completed Close-JsmAlert"
+        Write-Verbose -Message 'Completed Close-JsmAlert'
     }
 }

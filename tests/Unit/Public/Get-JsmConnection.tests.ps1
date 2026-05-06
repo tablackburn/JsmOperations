@@ -11,7 +11,8 @@ BeforeDiscovery {
         # the values it needs (BHPSModuleManifest, BHProjectName) — when running
         # via ./build.ps1 this happens before psake; running tests in isolation
         # bypasses that, so we do it here.
-        Set-BuildEnvironment -Path (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))) -Force
+        $repoRoot = Split-Path -Path (Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent) -Parent
+        Set-BuildEnvironment -Path $repoRoot -Force
         $buildFilePath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\..\build.psake.ps1'
         $invokePsakeParameters = @{
             TaskList  = 'Build'
@@ -20,33 +21,33 @@ BeforeDiscovery {
         Invoke-psake @invokePsakeParameters
     }
 
-    $projectRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
-    $sourceManifest = Join-Path $projectRoot "$Env:BHProjectName/$Env:BHProjectName.psd1"
+    $projectRoot = Split-Path -Path (Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent) -Parent
+    $sourceManifest = Join-Path -Path $projectRoot -ChildPath "$Env:BHProjectName/$Env:BHProjectName.psd1"
     $moduleVersion = (Import-PowerShellDataFile -Path $sourceManifest).ModuleVersion
-    $Env:BHBuildOutput = Join-Path $projectRoot "Output/$Env:BHProjectName/$moduleVersion"
+    $Env:BHBuildOutput = Join-Path -Path $projectRoot -ChildPath "Output/$Env:BHProjectName/$moduleVersion"
 }
 
 BeforeAll {
     $moduleManifestPath = Join-Path -Path $Env:BHBuildOutput -ChildPath "$Env:BHProjectName.psd1"
-    Get-Module $Env:BHProjectName | Remove-Module -Force -ErrorAction 'Ignore'
+    Get-Module -Name $Env:BHProjectName | Remove-Module -Force -ErrorAction 'Ignore'
     Import-Module -Name $moduleManifestPath -Force -ErrorAction 'Stop'
-    . (Join-Path $PSScriptRoot '..\..\TestHelpers.ps1')
+    . (Join-Path -Path $PSScriptRoot -ChildPath '..\..\TestHelpers.ps1')
 }
 
 Describe 'Get-JsmConnection' {
 
     AfterEach {
-        InModuleScope $Env:BHProjectName { $script:JsmConnection = $null }
+        InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock { $script:JsmConnection = $null }
     }
 
     It 'Returns $null when no connection is active' {
-        InModuleScope $Env:BHProjectName { $script:JsmConnection = $null }
+        InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock { $script:JsmConnection = $null }
         Get-JsmConnection | Should -BeNullOrEmpty
     }
 
     It 'Returns a view of the connection without ApiToken' {
-        $tok = New-TestSecureString 'tok'
-        InModuleScope $Env:BHProjectName -Parameters @{ Tok = $tok } {
+        $tok = New-TestSecureString -Value 'tok'
+        InModuleScope -ModuleName $Env:BHProjectName -Parameters @{ Tok = $tok } -ScriptBlock {
             param($Tok)
             $script:JsmConnection = [pscustomobject]@{
                 Email       = 'me@example.com'

@@ -89,9 +89,11 @@ function Compare-SemVerPrerelease {
     [OutputType([int])]
     param(
         [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [string]$FirstPrerelease,
 
         [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [string]$SecondPrerelease
     )
 
@@ -205,6 +207,7 @@ function Test-VersionComparison {
     [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [string]$FirstVersion,
 
         [Parameter(Mandatory = $false)]
@@ -212,6 +215,7 @@ function Test-VersionComparison {
         [string]$FirstPrerelease,
 
         [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [string]$SecondVersion,
 
         [Parameter(Mandatory = $false)]
@@ -322,9 +326,11 @@ function Test-VersionConstraint {
     [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [string]$ManifestVersion,
 
         [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [string]$RequirementsVersion,
 
         [Parameter(Mandatory = $true)]

@@ -61,7 +61,7 @@ Describe 'Connect-JsmService' {
                 Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ values = @() } }
             }
 
-            $token = New-TestSecureString -Value 'token-1'
+            $token = New-TestSecureString
             Connect-JsmService -Email 'me@example.com' -ApiToken $token -CloudId 'c1'
 
             InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
@@ -79,7 +79,7 @@ Describe 'Connect-JsmService' {
                 Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ values = @() } }
             }
 
-            $token = New-TestSecureString -Value 'token-2'
+            $token = New-TestSecureString
             $credential = [pscredential]::new('credential@example.com', $token)
             Connect-JsmService -Credential $credential -CloudId 'c2'
 
@@ -97,7 +97,7 @@ Describe 'Connect-JsmService' {
                 Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ values = @() } }
             }
             $env:JSM_EMAIL = 'environment@example.com'
-            $env:JSM_API_TOKEN = 'environment-token'
+            $env:JSM_API_TOKEN = New-TestToken
             $env:JSM_CLOUD_ID = 'environment-cloud'
 
             Connect-JsmService
@@ -112,7 +112,7 @@ Describe 'Connect-JsmService' {
     Context 'Validation' {
 
         It 'Throws when email is missing entirely' {
-            $token = New-TestSecureString -Value 'token'
+            $token = New-TestSecureString
             { Connect-JsmService -ApiToken $token -CloudId 'c1' } |
                 Should -Throw -ExpectedMessage '*Email is required*'
         }
@@ -123,18 +123,18 @@ Describe 'Connect-JsmService' {
         }
 
         It 'Throws when CloudId is missing entirely' {
-            $token = New-TestSecureString -Value 'token'
+            $token = New-TestSecureString
             { Connect-JsmService -Email 'me@example.com' -ApiToken $token } |
                 Should -Throw -ExpectedMessage '*CloudId is required*'
         }
 
         It 'Fails parameter binding when -Email is explicitly empty' {
-            $token = New-TestSecureString -Value 'token'
+            $token = New-TestSecureString
             { Connect-JsmService -Email '' -ApiToken $token -CloudId 'c1' } | Should -Throw
         }
 
         It 'Fails parameter binding when -CloudId is explicitly empty' {
-            $token = New-TestSecureString -Value 'token'
+            $token = New-TestSecureString
             { Connect-JsmService -Email 'me@example.com' -ApiToken $token -CloudId '' } | Should -Throw
         }
     }
@@ -145,7 +145,7 @@ Describe 'Connect-JsmService' {
             InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
                 Mock -CommandName 'Invoke-JsmApi' -MockWith { throw 'HTTP 401' }
             }
-            $token = New-TestSecureString -Value 'bad'
+            $token = New-TestSecureString
 
             { Connect-JsmService -Email 'me@example.com' -ApiToken $token -CloudId 'c1' } |
                 Should -Throw '*HTTP 401*'
@@ -162,7 +162,7 @@ Describe 'Connect-JsmService' {
             InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
                 Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ values = @() } }
             }
-            $token = New-TestSecureString -Value 'token'
+            $token = New-TestSecureString
 
             $result = Connect-JsmService -Email 'me@example.com' -ApiToken $token -CloudId 'c1' -PassThru
 

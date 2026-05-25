@@ -46,7 +46,7 @@ Describe 'Get-JsmConnection' {
     }
 
     It 'Returns a view of the connection without ApiToken' {
-        $apiToken = New-TestSecureString -Value 'token'
+        $apiToken = New-TestSecureString
         InModuleScope -ModuleName $Env:BHProjectName -Parameters @{ ApiToken = $apiToken } -ScriptBlock {
             param($ApiToken)
             $script:JsmConnection = [pscustomobject]@{

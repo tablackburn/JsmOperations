@@ -118,7 +118,7 @@ jobs:
 
       - name: Upload Coverage to Codecov
         if: success() && steps.template_guard.outputs.is_template == 'false'
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: out/codeCoverage.xml

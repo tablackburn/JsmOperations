@@ -150,12 +150,8 @@ BeforeAll {
     # Parse the version from the changelog
     $changelogPath = Join-Path -Path $Env:BHProjectPath -ChildPath 'CHANGELOG.md'
     $changelogVersionPattern = '^##\s\\?\[(?<Version>(\d+\.){1,3}\d+)\\?\]' # Matches on a line that starts with '## [Version]' or '## \[Version\]'
-    $changelogVersion = Get-Content -Path $changelogPath | ForEach-Object {
-        if ($_ -match $changelogVersionPattern) {
-            $changelogVersion = $matches.Version
-            break
-        }
-    }
+    $changelogVersion = Select-String -Path $changelogPath -Pattern $changelogVersionPattern -List |
+        ForEach-Object { $_.Matches[0].Groups['Version'].Value }
 }
 Describe 'Module manifest' {
 

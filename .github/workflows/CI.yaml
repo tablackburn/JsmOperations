@@ -16,7 +16,7 @@ jobs:
     name: PSScriptAnalyzer Lint
     runs-on: ubuntu-latest
     # Guard against a hung step burning the 6-hour default. Lint normally
-    # finishes in well under a minute, cold cache included.
+    # finishes in well under a minute, even on a cold run.
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -47,11 +47,11 @@ jobs:
         if: steps.template_guard.outputs.is_template == 'false'
         shell: pwsh
         run: |
-          if (Get-Module -Name PSScriptAnalyzer -ListAvailable) {
-            $version = (Get-Module -Name PSScriptAnalyzer -ListAvailable |
-              Sort-Object -Property Version -Descending |
-              Select-Object -First 1).Version
-            Write-Host "PSScriptAnalyzer $version already available; skipping install."
+          $installed = Get-Module -Name PSScriptAnalyzer -ListAvailable |
+            Sort-Object -Property Version -Descending |
+            Select-Object -First 1
+          if ($installed) {
+            Write-Host "PSScriptAnalyzer $($installed.Version) already available; skipping install."
             return
           }
 

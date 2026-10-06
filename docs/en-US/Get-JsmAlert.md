@@ -20,7 +20,7 @@ Get-JsmAlert [-Query <String>] [-Limit <Int32>] [-OrderBy <String>] [-Order <Str
 
 ### ById
 ```
-Get-JsmAlert -Id <String> [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-JsmAlert -Id <String> [-IdentifierType <String>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -29,9 +29,11 @@ Two modes of operation, selected by parameter set:
   page size.
 Returns the .values payload from the response envelope.
 - ById: GET /v1/alerts/{id} for a single alert.
-Accepts the id from the
-  pipeline (by value or by property name), so you can chain from list
-  output: Get-JsmAlert -Query 'status:open' | Get-JsmAlert.
+A tinyId or alias given
+  with -IdentifierType is first resolved to the alert UUID.
+Accepts the
+  id from the pipeline (by value or by property name), so you can chain
+  from list output: Get-JsmAlert -Query 'status:open' | Get-JsmAlert.
 
 v0.1.0 returns the raw deserialized JSON.
 No reshaping or type accelerator.
@@ -59,12 +61,22 @@ Get-JsmAlert -Id 'abc-123-...'
 
 Returns the detail object for a single alert.
 
+### EXAMPLE 4
+```
+Get-JsmAlert -Id 623551 -IdentifierType tiny
+```
+
+Returns the alert whose tinyId (the number shown in the JSM UI) is 623551.
+
 ## PARAMETERS
 
 ### -Id
-The alert id (UUID or tinyId).
-Accepts pipeline input by value and by
-property name.
+The alert identifier.
+Interpreted as the alert UUID by default; pass
+-IdentifierType tiny for the short numeric tinyId shown in the JSM UI, or
+-IdentifierType alias for an integration alias.
+Accepts pipeline input by
+value and by property name.
 
 ```yaml
 Type: String
@@ -75,6 +87,29 @@ Required: True
 Position: Named
 Default value: None
 Accept pipeline input: True (ByPropertyName, ByValue)
+Accept wildcard characters: False
+```
+
+### -IdentifierType
+How to interpret -Id: 'id' (alert UUID, the default), 'tiny' (tinyId), or
+'alias' (integration alias).
+The JSM Cloud API only addresses alerts by
+UUID, so 'tiny' and 'alias' cost one extra lookup call.
+tinyIds are
+reused over time; if several alerts share one, the single non-closed
+alert is used, otherwise the most recently created (with a warning).
+Piped alert objects bind their id (UUID) property, so leave the default
+when piping.
+
+```yaml
+Type: String
+Parameter Sets: ById
+Aliases:
+
+Required: False
+Position: Named
+Default value: Id
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 

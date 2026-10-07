@@ -95,10 +95,11 @@ Accept wildcard characters: False
 How to interpret -Id: 'id' (alert UUID, the default), 'tiny' (tinyId), or
 'alias' (integration alias).
 The JSM Cloud API only addresses alerts by
-UUID, so 'tiny' and 'alias' cost one extra lookup call.
-tinyIds are
-reused over time; if several alerts share one, the single non-closed
-alert is used, otherwise the most recently created (with a warning).
+UUID, so 'tiny' and 'alias' cost one or two extra lookup calls.
+tinyIds
+are reused over time, and an alias is only unique among open alerts; if
+several alerts match, the single non-closed alert is used, otherwise the
+most recently created (with a warning).
 Piped alert objects bind their id (UUID) property, so leave the default
 when piping.
 

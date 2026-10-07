@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `Get-JsmAlert -Id`, `Close-JsmAlert`, and `Confirm-JsmAlert` returned 404 when given an alert tinyId, because the JSM Cloud API only addresses alerts by UUID. They now accept `-IdentifierType` (`id`, `tiny`, `alias`; default `id`) and resolve a tinyId or alias to the alert UUID before calling the API ([#35](https://github.com/tablackburn/JsmOperations/issues/35)). tinyIds are reused over time: when several alerts share one, the single non-closed alert is used, otherwise the most recently created (with a warning).
+- `Get-JsmAlert -Id`, `Close-JsmAlert`, and `Confirm-JsmAlert` returned 404 when given an alert tinyId, because the JSM Cloud API only addresses alerts by UUID. They now accept `-IdentifierType` (`id`, `tiny`, `alias`; default `id`) and resolve a tinyId or alias to the alert UUID before calling the API ([#35](https://github.com/tablackburn/JsmOperations/issues/35)). An alias that the `/alerts/alias` endpoint cannot resolve (it only finds open alerts) falls back to an `alias:` search, so closed alerts resolve too. tinyIds are reused over time and aliases are only unique among open alerts: when several alerts match, the single non-closed alert is used, otherwise the most recently created (with a warning).
 
 ## [0.1.0] - 2026-05-01
 

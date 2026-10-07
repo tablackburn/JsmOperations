@@ -57,6 +57,86 @@ Describe 'Resolve-JsmAlertId' {
                     $Path -eq '/alerts/alias' -and
                     $Query.alias -eq 'my alias/x'
                 }
+                Should -Invoke -CommandName 'Invoke-JsmApi' -Times 0 -ParameterFilter { $Path -eq '/alerts' }
+            }
+        }
+
+        Context 'Fallback when the alias endpoint returns 404 (it only resolves open alerts)' {
+
+            BeforeAll {
+                $script:NotFound = [Microsoft.PowerShell.Commands.HttpResponseException]::new(
+                    'Response status code does not indicate success: 404 (Not Found).',
+                    [System.Net.Http.HttpResponseMessage]::new([System.Net.HttpStatusCode]::NotFound)
+                )
+            }
+
+            It 'Falls back to a quoted alias: list query and returns the exact match' {
+                InModuleScope -ModuleName $Env:BHProjectName -Parameters @{ NotFound = $script:NotFound } -ScriptBlock {
+                    param($NotFound)
+                    Mock -CommandName 'Invoke-JsmApi' -ParameterFilter { $Path -eq '/alerts/alias' } -MockWith { throw $NotFound }.GetNewClosure()
+                    Mock -CommandName 'Invoke-JsmApi' -ParameterFilter { $Path -eq '/alerts' } -MockWith {
+                        [pscustomobject]@{ values = @(
+                                [pscustomobject]@{ id = 'uuid-loose'; alias = 'my alias/x-2'; status = 'closed'; createdAt = '2026-10-02T00:00:00Z' }
+                                [pscustomobject]@{ id = 'uuid-closed'; alias = 'my alias/x'; status = 'closed'; createdAt = '2026-10-01T00:00:00Z' }
+                            ) }
+                    }
+                    Resolve-JsmAlertId -Id 'my alias/x' -IdentifierType 'alias' | Should -Be 'uuid-closed'
+                    Should -Invoke -CommandName 'Invoke-JsmApi' -Times 1 -ParameterFilter {
+                        $Path -eq '/alerts' -and $Query.query -eq 'alias:"my alias/x"'
+                    }
+                }
+            }
+
+            It 'Escapes quotes and backslashes inside the quoted alias' {
+                InModuleScope -ModuleName $Env:BHProjectName -Parameters @{ NotFound = $script:NotFound } -ScriptBlock {
+                    param($NotFound)
+                    Mock -CommandName 'Invoke-JsmApi' -ParameterFilter { $Path -eq '/alerts/alias' } -MockWith { throw $NotFound }.GetNewClosure()
+                    Mock -CommandName 'Invoke-JsmApi' -ParameterFilter { $Path -eq '/alerts' } -MockWith {
+                        [pscustomobject]@{ values = @([pscustomobject]@{ id = 'uuid-q'; alias = 'a"b\c'; status = 'closed'; createdAt = '2026-10-01T00:00:00Z' }) }
+                    }
+                    Resolve-JsmAlertId -Id 'a"b\c' -IdentifierType 'alias' | Should -Be 'uuid-q'
+                    Should -Invoke -CommandName 'Invoke-JsmApi' -Times 1 -ParameterFilter {
+                        $Path -eq '/alerts' -and $Query.query -eq 'alias:"a\"b\\c"'
+                    }
+                }
+            }
+
+            It 'Picks the most recently created when several closed alerts share the alias, and warns' {
+                InModuleScope -ModuleName $Env:BHProjectName -Parameters @{ NotFound = $script:NotFound } -ScriptBlock {
+                    param($NotFound)
+                    Mock -CommandName 'Invoke-JsmApi' -ParameterFilter { $Path -eq '/alerts/alias' } -MockWith { throw $NotFound }.GetNewClosure()
+                    Mock -CommandName 'Invoke-JsmApi' -ParameterFilter { $Path -eq '/alerts' } -MockWith {
+                        [pscustomobject]@{ values = @(
+                                [pscustomobject]@{ id = 'uuid-older'; alias = 'dup'; status = 'closed'; createdAt = '2026-04-01T00:00:00Z' }
+                                [pscustomobject]@{ id = 'uuid-newer'; alias = 'dup'; status = 'closed'; createdAt = '2026-10-01T00:00:00Z' }
+                            ) }
+                    }
+                    Mock -CommandName 'Write-Warning'
+                    Resolve-JsmAlertId -Id 'dup' -IdentifierType 'alias' | Should -Be 'uuid-newer'
+                    Should -Invoke -CommandName 'Write-Warning' -Times 1
+                }
+            }
+
+            It 'Throws a not-found error naming the alias when the query has no exact match' {
+                InModuleScope -ModuleName $Env:BHProjectName -Parameters @{ NotFound = $script:NotFound } -ScriptBlock {
+                    param($NotFound)
+                    Mock -CommandName 'Invoke-JsmApi' -ParameterFilter { $Path -eq '/alerts/alias' } -MockWith { throw $NotFound }.GetNewClosure()
+                    Mock -CommandName 'Invoke-JsmApi' -ParameterFilter { $Path -eq '/alerts' } -MockWith { [pscustomobject]@{ values = @() } }
+                    { Resolve-JsmAlertId -Id 'missing-alias' -IdentifierType 'alias' } | Should -Throw "*alias 'missing-alias'*"
+                }
+            }
+
+            It 'Rethrows non-404 errors from the alias endpoint without falling back' {
+                InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                    $forbidden = [Microsoft.PowerShell.Commands.HttpResponseException]::new(
+                        'Response status code does not indicate success: 403 (Forbidden).',
+                        [System.Net.Http.HttpResponseMessage]::new([System.Net.HttpStatusCode]::Forbidden)
+                    )
+                    Mock -CommandName 'Invoke-JsmApi' -ParameterFilter { $Path -eq '/alerts/alias' } -MockWith { throw $forbidden }.GetNewClosure()
+                    Mock -CommandName 'Invoke-JsmApi' -ParameterFilter { $Path -eq '/alerts' }
+                    { Resolve-JsmAlertId -Id 'some-alias' -IdentifierType 'alias' } | Should -Throw '*403*'
+                    Should -Invoke -CommandName 'Invoke-JsmApi' -Times 0 -ParameterFilter { $Path -eq '/alerts' }
+                }
             }
         }
     }

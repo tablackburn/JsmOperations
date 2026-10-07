@@ -110,6 +110,26 @@ Task -Name 'UpdateReleaseNotes' -Depends 'Build' -Description 'Set built manifes
 # defaults to depending only on 'Test').
 $PSBPublishDependency = @('Test', 'UpdateReleaseNotes')
 
+# platyPS writes regenerated markdown with the platform's line endings (CRLF on Windows),
+# while .gitattributes stores docs as LF. Every Windows build therefore leaves docs/ looking
+# modified even when nothing changed. Rewrite the generated markdown as LF straight after
+# GenerateMarkdown; GenerateMAML depends on this task so the MAML is built from the
+# normalized files.
+$normalizeMarkdownDescription = 'Rewrite generated markdown help with LF line endings'
+Task -Name 'NormalizeMarkdownLineEndings' -Depends 'GenerateMarkdown' -Description $normalizeMarkdownDescription {
+    $docsPath = Join-Path -Path $PSBPreference.Docs.RootDir -ChildPath $PSBPreference.Help.DefaultLocale
+    if (-not (Test-Path -Path $docsPath)) {
+        return
+    }
+    foreach ($markdownFile in Get-ChildItem -Path $docsPath -Filter '*.md' -File) {
+        $content = [IO.File]::ReadAllText($markdownFile.FullName)
+        if ($content.Contains("`r`n")) {
+            [IO.File]::WriteAllText($markdownFile.FullName, $content.Replace("`r`n", "`n"))
+        }
+    }
+}
+$PSBGenerateMAMLDependency = @('NormalizeMarkdownLineEndings')
+
 # Custom Pester task, used instead of PowerShellBuild's built-in 'Pester' task.
 #
 # Two separate reasons it exists.

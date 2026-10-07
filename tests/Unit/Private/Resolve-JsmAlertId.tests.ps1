@@ -126,6 +126,44 @@ Describe 'Resolve-JsmAlertId' {
                 }
             }
 
+            It 'Pages past a full page of loose matches to find the exact alias' {
+                InModuleScope -ModuleName $Env:BHProjectName -Parameters @{ NotFound = $script:NotFound } -ScriptBlock {
+                    param($NotFound)
+                    Mock -CommandName 'Invoke-JsmApi' -ParameterFilter { $Path -eq '/alerts/alias' } -MockWith { throw $NotFound }.GetNewClosure()
+                    Mock -CommandName 'Invoke-JsmApi' -ParameterFilter { $Path -eq '/alerts' } -MockWith {
+                        if ($Query.offset -eq 0) {
+                            $loose = foreach ($index in 1..100) {
+                                [pscustomobject]@{ id = "uuid-loose-$index"; alias = "errors_host$index"; status = 'closed'; createdAt = '2026-10-05T00:00:00Z' }
+                            }
+                            [pscustomobject]@{ values = @($loose) }
+                        }
+                        else {
+                            [pscustomobject]@{ values = @([pscustomobject]@{ id = 'uuid-exact'; alias = 'errors'; status = 'closed'; createdAt = '2026-04-01T00:00:00Z' }) }
+                        }
+                    }
+                    Resolve-JsmAlertId -Id 'errors' -IdentifierType 'alias' | Should -Be 'uuid-exact'
+                    Should -Invoke -CommandName 'Invoke-JsmApi' -Times 1 -Exactly -ParameterFilter { $Path -eq '/alerts' -and $Query.offset -eq 0 }
+                    Should -Invoke -CommandName 'Invoke-JsmApi' -Times 1 -Exactly -ParameterFilter { $Path -eq '/alerts' -and $Query.offset -eq 100 }
+                }
+            }
+
+            It 'Stops paging at the first page that contains an exact alias match' {
+                InModuleScope -ModuleName $Env:BHProjectName -Parameters @{ NotFound = $script:NotFound } -ScriptBlock {
+                    param($NotFound)
+                    Mock -CommandName 'Invoke-JsmApi' -ParameterFilter { $Path -eq '/alerts/alias' } -MockWith { throw $NotFound }.GetNewClosure()
+                    Mock -CommandName 'Invoke-JsmApi' -ParameterFilter { $Path -eq '/alerts' } -MockWith {
+                        $page = foreach ($index in 1..100) {
+                            [pscustomobject]@{ id = "uuid-$($Query.offset)-$index"; alias = 'dup'; status = 'closed'; createdAt = '2026-10-01T00:00:00Z' }
+                        }
+                        [pscustomobject]@{ values = @($page) }
+                    }
+                    Mock -CommandName 'Write-Warning'
+                    Resolve-JsmAlertId -Id 'dup' -IdentifierType 'alias' | Should -Not -BeNullOrEmpty
+                    Should -Invoke -CommandName 'Invoke-JsmApi' -Times 1 -Exactly -ParameterFilter { $Path -eq '/alerts' }
+                    Should -Invoke -CommandName 'Write-Warning' -Times 1 -ParameterFilter { $Message -like '*at least 100 alerts*' }
+                }
+            }
+
             It 'Rethrows non-404 errors from the alias endpoint without falling back' {
                 InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
                     $forbidden = [Microsoft.PowerShell.Commands.HttpResponseException]::new(
@@ -209,6 +247,58 @@ Describe 'Resolve-JsmAlertId' {
                 Mock -CommandName 'Write-Warning'
                 Resolve-JsmAlertId -Id '623551' -IdentifierType 'tiny' | Should -Be 'uuid-open-newer'
                 Should -Invoke -CommandName 'Write-Warning' -Times 1
+            }
+        }
+
+        It 'Pages past a full page of loose matches to find the exact tinyId' {
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                Mock -CommandName 'Invoke-JsmApi' -MockWith {
+                    if ($Query.offset -eq 0) {
+                        $loose = foreach ($index in 1..100) {
+                            [pscustomobject]@{ id = "uuid-loose-$index"; tinyId = "62355$index"; status = 'closed'; createdAt = '2026-10-05T00:00:00Z' }
+                        }
+                        [pscustomobject]@{ values = @($loose) }
+                    }
+                    else {
+                        [pscustomobject]@{ values = @([pscustomobject]@{ id = 'uuid-exact'; tinyId = '623551'; status = 'open'; createdAt = '2026-04-01T00:00:00Z' }) }
+                    }
+                }
+                Resolve-JsmAlertId -Id '623551' -IdentifierType 'tiny' | Should -Be 'uuid-exact'
+                Should -Invoke -CommandName 'Invoke-JsmApi' -Times 2 -Exactly -ParameterFilter { $Path -eq '/alerts' }
+            }
+        }
+
+        It 'Prefers an open match on a later page over closed matches on the first page' {
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                Mock -CommandName 'Invoke-JsmApi' -MockWith {
+                    if ($Query.offset -eq 0) {
+                        $closed = foreach ($index in 1..100) {
+                            [pscustomobject]@{ id = "uuid-closed-$index"; tinyId = '623551'; status = 'closed'; createdAt = '2026-10-05T00:00:00Z' }
+                        }
+                        [pscustomobject]@{ values = @($closed) }
+                    }
+                    else {
+                        [pscustomobject]@{ values = @([pscustomobject]@{ id = 'uuid-open'; tinyId = '623551'; status = 'open'; createdAt = '2026-04-01T00:00:00Z' }) }
+                    }
+                }
+                Mock -CommandName 'Write-Warning'
+                Resolve-JsmAlertId -Id '623551' -IdentifierType 'tiny' | Should -Be 'uuid-open'
+                Should -Invoke -CommandName 'Write-Warning' -Times 0
+            }
+        }
+
+        It 'Stops after 10 pages and says the search was truncated' {
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                Mock -CommandName 'Invoke-JsmApi' -MockWith {
+                    $loose = foreach ($index in 1..100) {
+                        [pscustomobject]@{ id = "uuid-$($Query.offset)-$index"; tinyId = '9999999'; status = 'closed'; createdAt = '2026-10-05T00:00:00Z' }
+                    }
+                    [pscustomobject]@{ values = @($loose) }
+                }
+                Mock -CommandName 'Write-Warning'
+                { Resolve-JsmAlertId -Id '623551' -IdentifierType 'tiny' } | Should -Throw '*first 1000 search results*'
+                Should -Invoke -CommandName 'Invoke-JsmApi' -Times 10 -Exactly -ParameterFilter { $Path -eq '/alerts' }
+                Should -Invoke -CommandName 'Write-Warning' -Times 1 -ParameterFilter { $Message -like '*Stopped searching*' }
             }
         }
 

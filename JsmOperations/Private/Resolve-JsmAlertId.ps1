@@ -15,6 +15,12 @@ function Resolve-JsmAlertId {
           GET /v1/alerts?query=alias:"{alias}", filtered to exact matches.
         - tiny: GET /v1/alerts?query=tinyId:{tinyId}, filtered to exact matches.
 
+        Both searches match loosely, so results are paged newest-first (100 per
+        page, at most 10 pages). The alias search stops at the first page with an
+        exact match, since that match is the newest and no open alert can share
+        the alias. The tinyId search reads every page so an open match on a later
+        page still wins.
+
         tinyIds are reused over time, and an alias is only unique among open
         alerts, so a query can return several alerts. When that happens the
         single non-closed match wins; otherwise the most recently created match
@@ -91,16 +97,46 @@ function Resolve-JsmAlertId {
                 $label = 'tinyId'
             }
 
-            $queryParams = @{
-                query = $searchQuery
-                size  = 100
-                sort  = 'createdAt'
-                order = 'desc'
+            # The query matches loosely (tinyId:77070 also returns 770701, and alias:"errors"
+            # returns every alert whose alias contains that word), so exact matches can sit
+            # behind pages of loose ones. Page newest-first and keep exact matches only.
+            $pageSize = 100
+            $maximumPages = 10
+            $alertMatches = [System.Collections.Generic.List[object]]::new()
+            $isPartialResult = $false
+            for ($pageIndex = 0; $pageIndex -lt $maximumPages; $pageIndex++) {
+                $queryParameters = @{
+                    query  = $searchQuery
+                    size   = $pageSize
+                    offset = $pageIndex * $pageSize
+                    sort   = 'createdAt'
+                    order  = 'desc'
+                }
+                $response = Invoke-JsmApi -Method 'Get' -Path '/alerts' -Query $queryParameters
+                $pageValues = @($response.values)
+                foreach ($alertValue in $pageValues) {
+                    if ([string]$alertValue.$matchProperty -ceq $Id) {
+                        $alertMatches.Add($alertValue)
+                    }
+                }
+                if ($pageValues.Count -lt $pageSize) {
+                    break
+                }
+                # No open alert has this alias (the alias endpoint returned 404), so the
+                # newest exact match is the answer and later pages cannot change it.
+                if ($IdentifierType -eq 'alias' -and $alertMatches.Count -gt 0) {
+                    $isPartialResult = $true
+                    break
+                }
+                if ($pageIndex -eq $maximumPages - 1) {
+                    $isPartialResult = $true
+                    Write-Warning "Stopped searching for $label '$Id' after the first $($maximumPages * $pageSize) search results."
+                }
             }
-            $response = Invoke-JsmApi -Method 'Get' -Path '/alerts' -Query $queryParams
-            # The query matches loosely (tinyId:77070 also returns 770701), so keep exact matches only.
-            $alertMatches = @($response.values | Where-Object { [string]$_.$matchProperty -ceq $Id })
             if ($alertMatches.Count -eq 0) {
+                if ($isPartialResult) {
+                    throw "No alert found with $label '$Id' in the first $($maximumPages * $pageSize) search results. Pass the alert UUID instead."
+                }
                 throw "No alert found with $label '$Id'."
             }
 
@@ -112,7 +148,8 @@ function Resolve-JsmAlertId {
                 $candidates = if ($openMatches.Count -gt 1) { $openMatches } else { $alertMatches }
                 $newest = $candidates | Sort-Object -Property { [datetime]$_.createdAt } -Descending | Select-Object -First 1
                 if ($candidates.Count -gt 1) {
-                    Write-Warning "$label '$Id' matches $($candidates.Count) alerts; using the most recently created ($($newest.id)). Pass the UUID to target a different one."
+                    $matchCount = if ($isPartialResult) { "at least $($candidates.Count)" } else { $candidates.Count }
+                    Write-Warning "$label '$Id' matches $matchCount alerts; using the most recently created ($($newest.id)). Pass the UUID to target a different one."
                 }
                 Write-Output $newest.id
             }

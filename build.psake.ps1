@@ -115,7 +115,8 @@ $PSBPublishDependency = @('Test', 'UpdateReleaseNotes')
 # modified even when nothing changed. Rewrite the generated markdown as LF straight after
 # GenerateMarkdown; GenerateMAML depends on this task so the MAML is built from the
 # normalized files.
-Task -Name 'NormalizeMarkdownLineEndings' -Depends 'GenerateMarkdown' -Description 'Rewrite generated markdown help with LF line endings' {
+$normalizeMarkdownDescription = 'Rewrite generated markdown help with LF line endings'
+Task -Name 'NormalizeMarkdownLineEndings' -Depends 'GenerateMarkdown' -Description $normalizeMarkdownDescription {
     $docsPath = Join-Path -Path $PSBPreference.Docs.RootDir -ChildPath $PSBPreference.Help.DefaultLocale
     if (-not (Test-Path -Path $docsPath)) {
         return

@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-07
+
+### Added
+
+- `-IdentifierType` parameter (`id`, `tiny`, `alias`; default `id`) on `Get-JsmAlert -Id`, `Close-JsmAlert`, and `Confirm-JsmAlert`. A tinyId (the number shown in the JSM UI) or an integration alias is resolved to the alert UUID before the API call, because the JSM Cloud API only addresses alerts by UUID ([#35](https://github.com/tablackburn/JsmOperations/issues/35)).
+  - Aliases resolve for closed alerts too: when the `/alerts/alias` endpoint (open alerts only) returns 404, the lookup falls back to an `alias:` search.
+  - tinyIds are reused over time and aliases are only unique among open alerts. When several alerts match, the single non-closed alert is used; otherwise the most recently created is used and a warning names it. Pass the UUID to target a specific alert.
+
 ### Fixed
 
-- `Get-JsmAlert -Id`, `Close-JsmAlert`, and `Confirm-JsmAlert` returned 404 when given an alert tinyId, because the JSM Cloud API only addresses alerts by UUID. They now accept `-IdentifierType` (`id`, `tiny`, `alias`; default `id`) and resolve a tinyId or alias to the alert UUID before calling the API ([#35](https://github.com/tablackburn/JsmOperations/issues/35)). An alias that the `/alerts/alias` endpoint cannot resolve (it only finds open alerts) falls back to an `alias:` search, so closed alerts resolve too. tinyIds are reused over time and aliases are only unique among open alerts: when several alerts match, the single non-closed alert is used, otherwise the most recently created (with a warning).
+- Passing a tinyId to `Get-JsmAlert -Id`, `Close-JsmAlert`, or `Confirm-JsmAlert` returned 404 even though the help described `-Id` as accepting a tinyId. Use `-IdentifierType tiny` ([#35](https://github.com/tablackburn/JsmOperations/issues/35)).
 
 ## [0.1.0] - 2026-05-01
 
@@ -22,3 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Get-JsmAlert` - list alerts (with optional Lucene query, sort, page size) or fetch one by id.
 - `Confirm-JsmAlert` - acknowledge an alert.
 - `Close-JsmAlert` - close an alert.
+
+[Unreleased]: https://github.com/tablackburn/JsmOperations/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/tablackburn/JsmOperations/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/tablackburn/JsmOperations/releases/tag/v0.1.0

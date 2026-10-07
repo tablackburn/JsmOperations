@@ -13,15 +13,19 @@ Closes an alert in JSM Cloud Operations.
 ## SYNTAX
 
 ```
-Close-JsmAlert [-Id] <String> [[-Note] <String>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Close-JsmAlert [-Id] <String> [[-Note] <String>] [[-IdentifierType] <String>]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
 Sends POST /v1/alerts/{id}/close.
-The close operation is asynchronous on
-the server side, so the response is a request-status object rather than
-the updated alert.
-Pass -Verbose to see the request URL.
+A tinyId or alias given with
+-IdentifierType is first resolved to the alert UUID.
+The close operation
+is asynchronous on the server side, so the response is a request-status
+object rather than the updated alert.
+Pass -Verbose to see the request
+URL.
 
 Pipeline-friendly: pipe alerts (or their ids) directly in.
 
@@ -36,6 +40,13 @@ Closes a single alert.
 
 ### EXAMPLE 2
 ```
+Close-JsmAlert -Id 623551 -IdentifierType tiny -Note 'Resolved'
+```
+
+Closes the alert whose tinyId (the number shown in the JSM UI) is 623551.
+
+### EXAMPLE 3
+```
 Get-JsmAlert -Query 'status:open AND tag:stale' | Close-JsmAlert -Note 'Auto-closed by stale-alert sweep'
 ```
 
@@ -44,9 +55,12 @@ Closes all open alerts tagged stale and stamps a note explaining why.
 ## PARAMETERS
 
 ### -Id
-The alert id (UUID or tinyId).
-Accepts pipeline input by value and by
-property name.
+The alert identifier.
+Interpreted as the alert UUID by default; pass
+-IdentifierType tiny for the short numeric tinyId shown in the JSM UI, or
+-IdentifierType alias for an integration alias.
+Accepts pipeline input by
+value and by property name.
 
 ```yaml
 Type: String
@@ -73,6 +87,30 @@ Aliases:
 Required: False
 Position: 2
 Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -IdentifierType
+How to interpret -Id: 'id' (alert UUID, the default), 'tiny' (tinyId), or
+'alias' (integration alias).
+The JSM Cloud API only addresses alerts by
+UUID, so 'tiny' and 'alias' cost one or two extra lookup calls.
+tinyIds
+are reused over time, and an alias is only unique among open alerts; if
+several alerts match, the single non-closed alert is used, otherwise the
+most recently created (with a warning).
+Piped alert objects bind their id (UUID) property, so leave the default
+when piping.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
+Default value: Id
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

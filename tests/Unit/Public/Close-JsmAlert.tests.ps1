@@ -70,4 +70,61 @@ Describe 'Close-JsmAlert' {
     It 'Rejects an empty -Note value' {
         { Close-JsmAlert -Id 'abc-123' -Note '' } | Should -Throw
     }
+
+    Context 'Identifier type' {
+
+        It 'Resolves the id as a UUID by default' {
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ requestId = 'r4' } }
+                Close-JsmAlert -Id 'abc-123' | Out-Null
+                Should -Invoke -CommandName 'Invoke-JsmApi' -Times 1 -ParameterFilter {
+                    $Path -eq '/alerts/abc-123/close'
+                }
+            }
+        }
+
+        It 'Resolves a tinyId to the alert UUID before closing' {
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                Mock -CommandName 'Resolve-JsmAlertId' -MockWith { 'resolved-uuid' }
+                Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ requestId = 'r5' } }
+                Close-JsmAlert -Id '623551' -IdentifierType 'tiny' -Note 'resolved' | Out-Null
+                Should -Invoke -CommandName 'Resolve-JsmAlertId' -Times 1 -ParameterFilter {
+                    $Id -eq '623551' -and $IdentifierType -eq 'tiny'
+                }
+                Should -Invoke -CommandName 'Invoke-JsmApi' -Times 1 -ParameterFilter {
+                    $Method -eq 'Post' -and
+                    $Path -eq '/alerts/resolved-uuid/close' -and
+                    $Body.note -eq 'resolved'
+                }
+            }
+        }
+
+        It 'Resolves an alias to the alert UUID before closing' {
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                Mock -CommandName 'Resolve-JsmAlertId' -MockWith { 'resolved-uuid' }
+                Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ requestId = 'r6' } }
+                Close-JsmAlert -Id 'my alias/x' -IdentifierType 'alias' | Out-Null
+                Should -Invoke -CommandName 'Resolve-JsmAlertId' -Times 1 -ParameterFilter {
+                    $Id -eq 'my alias/x' -and $IdentifierType -eq 'alias'
+                }
+                Should -Invoke -CommandName 'Invoke-JsmApi' -Times 1 -ParameterFilter {
+                    $Path -eq '/alerts/resolved-uuid/close'
+                }
+            }
+        }
+
+        It 'Keeps -Note as the second positional parameter' {
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ requestId = 'r7' } }
+                Close-JsmAlert 'abc-123' 'resolved' | Out-Null
+                Should -Invoke -CommandName 'Invoke-JsmApi' -Times 1 -ParameterFilter {
+                    $Path -eq '/alerts/abc-123/close' -and $Body.note -eq 'resolved'
+                }
+            }
+        }
+
+        It 'Rejects an unknown -IdentifierType value' {
+            { Close-JsmAlert -Id 'abc-123' -IdentifierType 'bogus' } | Should -Throw
+        }
+    }
 }

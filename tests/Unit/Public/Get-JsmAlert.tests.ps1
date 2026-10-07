@@ -47,7 +47,8 @@ Describe 'Get-JsmAlert' {
                     $Query.size -eq 20 -and
                     $Query.sort -eq 'updatedAt' -and
                     $Query.order -eq 'desc' -and
-                    -not $Query.ContainsKey('query')
+                    -not $Query.ContainsKey('query') -and
+                    -not $Query.ContainsKey('identifierType')
                 }
             }
         }
@@ -112,6 +113,53 @@ Describe 'Get-JsmAlert' {
                     $Path -eq '/alerts/piped'
                 }
             }
+        }
+
+        It 'Resolves the id as a UUID by default' {
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ id = 'abc-123' } }
+                Get-JsmAlert -Id 'abc-123' | Out-Null
+                Should -Invoke -CommandName 'Invoke-JsmApi' -Times 1 -ParameterFilter {
+                    $Path -eq '/alerts/abc-123'
+                }
+            }
+        }
+
+        It 'Resolves a tinyId to the alert UUID before fetching' {
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                Mock -CommandName 'Resolve-JsmAlertId' -MockWith { 'resolved-uuid' }
+                Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ id = 'resolved-uuid'; tinyId = '623551' } }
+                $result = Get-JsmAlert -Id '623551' -IdentifierType 'tiny'
+                $result.id | Should -Be 'resolved-uuid'
+                Should -Invoke -CommandName 'Resolve-JsmAlertId' -Times 1 -ParameterFilter {
+                    $Id -eq '623551' -and $IdentifierType -eq 'tiny'
+                }
+                Should -Invoke -CommandName 'Invoke-JsmApi' -Times 1 -ParameterFilter {
+                    $Method -eq 'Get' -and $Path -eq '/alerts/resolved-uuid'
+                }
+            }
+        }
+
+        It 'Resolves an alias to the alert UUID before fetching' {
+            InModuleScope -ModuleName $Env:BHProjectName -ScriptBlock {
+                Mock -CommandName 'Resolve-JsmAlertId' -MockWith { 'resolved-uuid' }
+                Mock -CommandName 'Invoke-JsmApi' -MockWith { @{ id = 'resolved-uuid' } }
+                Get-JsmAlert -Id 'my alias/x' -IdentifierType 'alias' | Out-Null
+                Should -Invoke -CommandName 'Resolve-JsmAlertId' -Times 1 -ParameterFilter {
+                    $Id -eq 'my alias/x' -and $IdentifierType -eq 'alias'
+                }
+                Should -Invoke -CommandName 'Invoke-JsmApi' -Times 1 -ParameterFilter {
+                    $Path -eq '/alerts/resolved-uuid'
+                }
+            }
+        }
+
+        It 'Rejects an unknown -IdentifierType value' {
+            { Get-JsmAlert -Id 'abc-123' -IdentifierType 'bogus' } | Should -Throw
+        }
+
+        It 'Does not allow -IdentifierType in the List parameter set' {
+            { Get-JsmAlert -Query 'status:open' -IdentifierType 'tiny' } | Should -Throw
         }
     }
 }
